@@ -1,8 +1,4 @@
-#!/bin/bash
-
-# version  0.2.0
-#
-# Starts the mailserver.
+#! /bin/bash
 
 ##########################################################################
 # >> DEFAULT VARS
@@ -48,7 +44,8 @@ DEFAULT_VARS["EXPLICITLY_DEFINED_SPAMASSASSIN_SPAM_TO_INBOX"]="$( [ -z "${SPAMAS
 DEFAULT_VARS["SPAMASSASSIN_SPAM_TO_INBOX"]="${SPAMASSASSIN_SPAM_TO_INBOX:=0}"
 DEFAULT_VARS["MOVE_SPAM_TO_JUNK"]="${MOVE_SPAM_TO_JUNK:=1}"
 DEFAULT_VARS["VIRUSMAILS_DELETE_DELAY"]="${VIRUSMAILS_DELETE_DELAY:=7}"
-# DEFAULT_VARS["DMS_DEBUG"] defined in helper_functions.sh
+DEFAULT_VARS["NETWORK_INTERFACE"]="${NETWORK_INTERFACE:="eth0"}"
+# DEFAULT_VARS["DMS_DEBUG"] defined in helper-functions.sh
 
 ##########################################################################
 # << DEFAULT VARS
@@ -94,7 +91,7 @@ CHKSUM_FILE=/tmp/docker-mailserver-config-chksum
 # Implement them in the section-group: {check,setup,fix,start}
 ##########################################################################
 
-function register_functions()
+function register_functions
 {
   _notify 'taskgrp' 'Initializing setup'
   _notify 'task' 'Registering check,setup,fix,misc and start-daemons functions'
@@ -169,8 +166,8 @@ function register_functions()
   _register_setup_function "_setup_environment"
   _register_setup_function "_setup_logrotate"
 
-  [[ ${PFLOGSUMM_TRIGGER} != "none" ]] && _register_setup_function "_setup_mail_summary"
-  [[ ${LOGWATCH_TRIGGER} != "none" ]] && _register_setup_function "_setup_logwatch"
+  _register_setup_function "_setup_mail_summary"
+  _register_setup_function "_setup_logwatch"
 
   _register_setup_function "_setup_user_patches"
 
@@ -252,31 +249,31 @@ declare -a DAEMONS_START
 # >> protected register_functions
 ##########################################################################
 
-function _register_start_daemon()
+function _register_start_daemon
 {
   DAEMONS_START+=("${1}")
   _notify 'inf' "${1}() registered"
 }
 
-function _register_setup_function()
+function _register_setup_function
 {
   FUNCS_SETUP+=("${1}")
   _notify 'inf' "${1}() registered"
 }
 
-function _register_fix_function()
+function _register_fix_function
 {
   FUNCS_FIX+=("${1}")
   _notify 'inf' "${1}() registered"
 }
 
-function _register_check_function()
+function _register_check_function
 {
   FUNCS_CHECK+=("${1}")
   _notify 'inf' "${1}() registered"
 }
 
-function _register_misc_function()
+function _register_misc_function
 {
   FUNCS_MISC+=("${1}")
   _notify 'inf' "${1}() registered"
@@ -286,13 +283,13 @@ function _register_misc_function()
 # << protected register_functions
 ##########################################################################
 
-function _defunc()
+function _defunc
 {
   _notify 'fatal' "Please fix your configuration. Exiting..."
   exit 1
 }
 
-function display_startup_daemon()
+function display_startup_daemon
 {
   ${1} &>/dev/null
   local RES=${?}
@@ -322,7 +319,7 @@ function display_startup_daemon()
 # Description: Place functions for initial check of container sanity
 ##########################################################################
 
-function check()
+function check
 {
   _notify 'taskgrp' 'Checking configuration'
 
@@ -335,7 +332,7 @@ function check()
   done
 }
 
-function _check_hostname()
+function _check_hostname
 {
   _notify "task" "Check that hostname/domainname is provided or overridden (no default docker hostname/kubernetes) [in ${FUNCNAME[0]}]"
 
@@ -357,7 +354,7 @@ function _check_hostname()
   fi
 }
 
-function _check_environment_variables()
+function _check_environment_variables
 {
   _notify "task" "Check that there are no conflicts with env variables [in ${FUNCNAME[0]}]"
   return 0
@@ -374,7 +371,7 @@ function _check_environment_variables()
 # Description: Place functions for functional configurations here
 ##########################################################################
 
-function setup()
+function setup
 {
   _notify 'taskgrp' 'Configuring mail server'
   for FUNC in "${FUNCS_SETUP[@]}"
@@ -383,7 +380,7 @@ function setup()
   done
 }
 
-function _setup_default_vars()
+function _setup_default_vars
 {
   _notify 'task' "Setting up default variables [in ${FUNCNAME[0]}]"
 
@@ -396,7 +393,7 @@ function _setup_default_vars()
 
   # set PFLOGSUMM_TRIGGER here for backwards compatibility
   # when REPORT_RECIPIENT is on the old method should be used
-  if [[ "${REPORT_RECIPIENT}" == "0" ]]
+  if [[ ${REPORT_RECIPIENT} == "0" ]]
   then
     DEFAULT_VARS["PFLOGSUMM_TRIGGER"]="${PFLOGSUMM_TRIGGER:="none"}"
   else
@@ -404,7 +401,7 @@ function _setup_default_vars()
   fi
 
   # expand address to simplify the rest of the script
-  if [[ "${REPORT_RECIPIENT}" == "0" ]] || [[ "${REPORT_RECIPIENT}" == "1" ]]
+  if [[ ${REPORT_RECIPIENT} == "0" ]] || [[ ${REPORT_RECIPIENT} == "1" ]]
   then
     REPORT_RECIPIENT="${POSTMASTER_ADDRESS}"
     DEFAULT_VARS["REPORT_RECIPIENT"]="${REPORT_RECIPIENT}"
@@ -429,7 +426,7 @@ function _setup_default_vars()
 # File/folder permissions are fine when using docker volumes, but may be wrong
 # when file system folders are mounted into the container.
 # Set the expected values and create missing folders/files just in case.
-function _setup_file_permissions()
+function _setup_file_permissions
 {
   _notify 'task' "Setting file/folder permissions"
 
@@ -447,7 +444,7 @@ function _setup_file_permissions()
   chmod 640 /var/log/mail/freshclam.log
 }
 
-function _setup_chksum_file()
+function _setup_chksum_file
 {
   _notify 'task' "Setting up configuration checksum file"
 
@@ -463,7 +460,7 @@ function _setup_chksum_file()
   fi
 }
 
-function _setup_mailname()
+function _setup_mailname
 {
   _notify 'task' 'Setting up Mailname'
 
@@ -471,7 +468,7 @@ function _setup_mailname()
   echo "${DOMAINNAME}" > /etc/mailname
 }
 
-function _setup_amavis()
+function _setup_amavis
 {
   _notify 'task' 'Setting up Amavis'
 
@@ -480,7 +477,7 @@ function _setup_amavis()
   sed -i 's/^#\$myhostname = "mail.example.com";/\$myhostname = "'"${HOSTNAME}"'";/' /etc/amavis/conf.d/05-node_id
 }
 
-function _setup_dmarc_hostname()
+function _setup_dmarc_hostname
 {
   _notify 'task' 'Setting up dmarc'
 
@@ -489,7 +486,7 @@ function _setup_dmarc_hostname()
     -e 's/^TrustedAuthservIDs.*$/TrustedAuthservIDs  '"${HOSTNAME}"'/g' /etc/opendmarc.conf
 }
 
-function _setup_postfix_hostname()
+function _setup_postfix_hostname
 {
   _notify 'task' 'Applying hostname and domainname to Postfix'
 
@@ -498,7 +495,7 @@ function _setup_postfix_hostname()
   postconf -e "mydomain = ${DOMAINNAME}"
 }
 
-function _setup_dovecot_hostname()
+function _setup_dovecot_hostname
 {
   _notify 'task' 'Applying hostname to Dovecot'
 
@@ -506,7 +503,7 @@ function _setup_dovecot_hostname()
   sed -i 's/^#hostname =.*$/hostname = '"${HOSTNAME}"'/g' /etc/dovecot/conf.d/15-lda.conf
 }
 
-function _setup_dovecot()
+function _setup_dovecot
 {
   _notify 'task' 'Setting up Dovecot'
 
@@ -605,7 +602,7 @@ function _setup_dovecot()
   chmod -f +x /usr/lib/dovecot/sieve-pipe/*
 }
 
-function _setup_dovecot_quota()
+function _setup_dovecot_quota
 {
     _notify 'task' 'Setting up Dovecot quota'
 
@@ -639,7 +636,7 @@ function _setup_dovecot_quota()
       if [[ ! -f /tmp/docker-mailserver/dovecot-quotas.cf ]]
       then
         _notify 'inf' "'config/docker-mailserver/dovecot-quotas.cf' is not provided. Using default quotas."
-        echo -n >/tmp/docker-mailserver/dovecot-quotas.cf
+        : >/tmp/docker-mailserver/dovecot-quotas.cf
       fi
 
       # enable quota policy check in postfix
@@ -647,11 +644,11 @@ function _setup_dovecot_quota()
     fi
 }
 
-function _setup_dovecot_local_user()
+function _setup_dovecot_local_user
 {
   _notify 'task' 'Setting up Dovecot Local User'
-  echo -n > /etc/postfix/vmailbox
-  echo -n > /etc/dovecot/userdb
+  : >/etc/postfix/vmailbox
+  : >/etc/dovecot/userdb
 
   if [[ -f /tmp/docker-mailserver/postfix-accounts.cf ]] && [[ ${ENABLE_LDAP} -ne 1 ]]
   then
@@ -673,42 +670,42 @@ function _setup_dovecot_local_user()
 
     # creating users ; 'pass' is encrypted
     # comments and empty lines are ignored
-    grep -v "^\s*$\|^\s*\#" /tmp/docker-mailserver/postfix-accounts.cf | while IFS=$'|' read -r login pass
+    while IFS=$'|' read -r LOGIN PASS
     do
       # Setting variables for better readability
-      user=$(echo "${login}" | cut -d @ -f1)
-      domain=$(echo "${login}" | cut -d @ -f2)
+      USER=$(echo "${LOGIN}" | cut -d @ -f1)
+      DOMAIN=$(echo "${LOGIN}" | cut -d @ -f2)
 
-      user_attributes=""
+      USER_ATTRIBUTES=""
       # test if user has a defined quota
       if [[ -f /tmp/docker-mailserver/dovecot-quotas.cf ]]
       then
         declare -a USER_QUOTA
-        IFS=':' ; read -r -a USER_QUOTA < <(grep "${user}@${domain}:" -i /tmp/docker-mailserver/dovecot-quotas.cf)
+        IFS=':' ; read -r -a USER_QUOTA < <(grep "${USER}@${DOMAIN}:" -i /tmp/docker-mailserver/dovecot-quotas.cf)
         unset IFS
 
-        [[ ${#USER_QUOTA[@]} -eq 2 ]] && user_attributes="${user_attributes}userdb_quota_rule=*:bytes=${USER_QUOTA[1]}"
+        [[ ${#USER_QUOTA[@]} -eq 2 ]] && USER_ATTRIBUTES="${USER_ATTRIBUTES}userdb_quota_rule=*:bytes=${USER_QUOTA[1]}"
       fi
 
       # Let's go!
-      _notify 'inf' "user '${user}' for domain '${domain}' with password '********', attr=${user_attributes}"
+      _notify 'inf' "user '${USER}' for domain '${DOMAIN}' with password '********', attr=${USER_ATTRIBUTES}"
 
-      echo "${login} ${domain}/${user}/" >> /etc/postfix/vmailbox
+      echo "${LOGIN} ${DOMAIN}/${USER}/" >> /etc/postfix/vmailbox
       # User database for dovecot has the following format:
       # user:password:uid:gid:(gecos):home:(shell):extra_fields
       # Example :
-      # ${login}:${pass}:5000:5000::/var/mail/${domain}/${user}::userdb_mail=maildir:/var/mail/${domain}/${user}
-      echo "${login}:${pass}:5000:5000::/var/mail/${domain}/${user}::${user_attributes}" >> /etc/dovecot/userdb
-      mkdir -p "/var/mail/${domain}/${user}"
+      # ${LOGIN}:${PASS}:5000:5000::/var/mail/${DOMAIN}/${USER}::userdb_mail=maildir:/var/mail/${DOMAIN}/${USER}
+      echo "${LOGIN}:${PASS}:5000:5000::/var/mail/${DOMAIN}/${USER}::${USER_ATTRIBUTES}" >> /etc/dovecot/userdb
+      mkdir -p "/var/mail/${DOMAIN}/${USER}"
 
       # Copy user provided sieve file, if present
-      if [[ -e "/tmp/docker-mailserver/${login}.dovecot.sieve" ]]
+      if [[ -e "/tmp/docker-mailserver/${LOGIN}.dovecot.sieve" ]]
       then
-        cp "/tmp/docker-mailserver/${login}.dovecot.sieve" "/var/mail/${domain}/${user}/.dovecot.sieve"
+        cp "/tmp/docker-mailserver/${LOGIN}.dovecot.sieve" "/var/mail/${DOMAIN}/${USER}/.dovecot.sieve"
       fi
 
-      echo "${domain}" >> /tmp/vhost.tmp
-    done
+      echo "${DOMAIN}" >> /tmp/vhost.tmp
+    done < <(grep -v "^\s*$\|^\s*\#" /tmp/docker-mailserver/postfix-accounts.cf)
   else
     _notify 'inf' "'config/docker-mailserver/postfix-accounts.cf' is not provided. No mail account created."
   fi
@@ -723,7 +720,7 @@ function _setup_dovecot_local_user()
   fi
 }
 
-function _setup_ldap()
+function _setup_ldap
 {
   _notify 'task' 'Setting up Ldap'
   _notify 'inf' 'Checking for custom configs'
@@ -775,7 +772,7 @@ function _setup_ldap()
 
   configomat.sh "DOVECOT_" "/etc/dovecot/dovecot-ldap.conf.ext"
 
-  # add  domainname to vhost
+  # add domainname to vhost
   echo "${DOMAINNAME}" >>/tmp/vhost.tmp
 
   _notify 'inf' "Enabling dovecot LDAP authentification"
@@ -806,7 +803,7 @@ function _setup_ldap()
   return 0
 }
 
-function _setup_postgrey()
+function _setup_postgrey
 {
   _notify 'inf' "Configuring postgrey"
 
@@ -831,7 +828,7 @@ function _setup_postgrey()
   fi
 }
 
-function _setup_postfix_postscreen()
+function _setup_postfix_postscreen
 {
   _notify 'inf' "Configuring postscreen"
   sed -i -e "s/postscreen_dnsbl_action = enforce/postscreen_dnsbl_action = ${POSTSCREEN_ACTION}/" \
@@ -839,7 +836,7 @@ function _setup_postfix_postscreen()
     -e "s/postscreen_bare_newline_action = enforce/postscreen_bare_newline_action = ${POSTSCREEN_ACTION}/" /etc/postfix/main.cf
 }
 
-function _setup_postfix_sizelimits()
+function _setup_postfix_sizelimits
 {
   _notify 'inf' "Configuring postfix message size limit"
   postconf -e "message_size_limit = ${DEFAULT_VARS["POSTFIX_MESSAGE_SIZE_LIMIT"]}"
@@ -851,13 +848,13 @@ function _setup_postfix_sizelimits()
   postconf -e "virtual_mailbox_limit = ${DEFAULT_VARS["POSTFIX_MAILBOX_SIZE_LIMIT"]}"
 }
 
-function _setup_postfix_smtputf8()
+function _setup_postfix_smtputf8
 {
   _notify 'inf' "Configuring postfix smtputf8 support (disable)"
   postconf -e "smtputf8_enable = no"
 }
 
-function _setup_spoof_protection()
+function _setup_spoof_protection
 {
   _notify 'inf' "Configuring Spoof Protection"
   sed -i 's|smtpd_sender_restrictions =|smtpd_sender_restrictions = reject_authenticated_sender_login_mismatch,|' /etc/postfix/main.cf
@@ -866,7 +863,7 @@ function _setup_spoof_protection()
   [[ ${ENABLE_LDAP} -eq 1 ]] && postconf -e "smtpd_sender_login_maps=ldap:/etc/postfix/ldap-users.cf ldap:/etc/postfix/ldap-aliases.cf ldap:/etc/postfix/ldap-groups.cf" || postconf -e "smtpd_sender_login_maps=texthash:/etc/postfix/virtual, hash:/etc/aliases, pcre:/etc/postfix/regexp, pcre:/etc/postfix/maps/sender_login_maps.pcre"
 }
 
-function _setup_postfix_access_control()
+function _setup_postfix_access_control
 {
   _notify 'inf' "Configuring user access"
 
@@ -881,7 +878,7 @@ function _setup_postfix_access_control()
   fi
 }
 
-function _setup_postfix_sasl()
+function _setup_postfix_sasl
 {
   if [[ ${ENABLE_SASLAUTHD} -eq 1 ]]
   then
@@ -902,7 +899,7 @@ EOF
   return 0
 }
 
-function _setup_saslauthd()
+function _setup_saslauthd
 {
   _notify 'task' "Setting up Saslauthd"
   _notify 'inf' "Configuring Cyrus SASL"
@@ -956,12 +953,12 @@ EOF
   gpasswd -a postfix sasl
 }
 
-function _setup_postfix_aliases()
+function _setup_postfix_aliases
 {
   _notify 'task' 'Setting up Postfix Aliases'
 
-  echo -n > /etc/postfix/virtual
-  echo -n > /etc/postfix/regexp
+  : >/etc/postfix/virtual
+  : >/etc/postfix/regexp
 
   if [[ -f /tmp/docker-mailserver/postfix-virtual.cf ]]
   then
@@ -975,15 +972,14 @@ function _setup_postfix_aliases()
 
     # the `to` is important, don't delete it
     # shellcheck disable=SC2034
-    (grep -v "^\s*$\|^\s*\#" /tmp/docker-mailserver/postfix-virtual.cf || true) | while read -r from to
+    while read -r FROM TO
     do
-      # Setting variables for better readability
-      uname=$(echo "${from}" | cut -d @ -f1)
-      domain=$(echo "${from}" | cut -d @ -f2)
+      UNAME=$(echo "${FROM}" | cut -d @ -f1)
+      DOMAIN=$(echo "${FROM}" | cut -d @ -f2)
 
       # if they are equal it means the line looks like: "user1     other@domain.tld"
-      [ "${uname}" != "${domain}" ] && echo "${domain}" >> /tmp/vhost.tmp
-    done
+      [[ ${UNAME} != "${DOMAIN}" ]] && echo "${DOMAIN}" >>/tmp/vhost.tmp
+    done < <(grep -v "^\s*$\|^\s*\#" /tmp/docker-mailserver/postfix-virtual.cf || true)
   else
     _notify 'inf' "Warning 'config/postfix-virtual.cf' is not provided. No mail alias/forward created."
   fi
@@ -1008,13 +1004,13 @@ s/$/ pcre:\/etc\/postfix\/regexp/
     cat /tmp/docker-mailserver/postfix-aliases.cf >> /etc/aliases
   else
     _notify 'inf' "'config/postfix-aliases.cf' is not provided and will be auto created."
-    echo -n >/tmp/docker-mailserver/postfix-aliases.cf
+    : >/tmp/docker-mailserver/postfix-aliases.cf
   fi
 
   postalias /etc/aliases
 }
 
-function _setup_SRS()
+function _setup_SRS
 {
   _notify 'task' 'Setting up SRS'
 
@@ -1024,7 +1020,7 @@ function _setup_SRS()
   postconf -e "recipient_canonical_classes = envelope_recipient,header_recipient"
 }
 
-function _setup_dkim()
+function _setup_dkim
 {
   _notify 'task' 'Setting up DKIM'
 
@@ -1056,7 +1052,7 @@ function _setup_dkim()
   fi
 }
 
-function _setup_ssl()
+function _setup_ssl
 {
   _notify 'task' 'Setting up SSL'
 
@@ -1215,8 +1211,8 @@ function _setup_ssl()
         ln -s /etc/postfix/ssl/cacert.pem "/etc/ssl/certs/cacert-${HOSTNAME}.pem"
 
         # Dovecot configuration
-        sed -i -e 's~ssl_cert = </etc/dovecot/ssl/dovecot\.pem~ssl_cert = </etc/postfix/ssl/'"${HOSTNAME}"'-combined\.pem~g' /etc/  dovecot/conf.d/10-ssl.conf
-        sed -i -e 's~ssl_key = </etc/dovecot/ssl/dovecot\.key~ssl_key = </etc/postfix/ssl/'"${HOSTNAME}"'-key\.pem~g' /etc/dovecot/ conf.d/10-ssl.conf
+        sed -i -e 's~ssl_cert = </etc/dovecot/ssl/dovecot\.pem~ssl_cert = </etc/postfix/ssl/'"${HOSTNAME}"'-combined\.pem~g' /etc/dovecot/conf.d/10-ssl.conf
+        sed -i -e 's~ssl_key = </etc/dovecot/ssl/dovecot\.key~ssl_key = </etc/postfix/ssl/'"${HOSTNAME}"'-key\.pem~g' /etc/dovecot/conf.d/10-ssl.conf
 
         _notify 'inf' "SSL configured with 'self-signed' certificates"
       fi
@@ -1237,7 +1233,7 @@ function _setup_ssl()
   esac
 }
 
-function _setup_postfix_vhost()
+function _setup_postfix_vhost
 {
   _notify 'task' "Setting up Postfix vhost"
 
@@ -1250,26 +1246,34 @@ function _setup_postfix_vhost()
   fi
 }
 
-function _setup_inet_protocols()
+function _setup_inet_protocols
 {
   _notify 'task' 'Setting up POSTFIX_INET_PROTOCOLS option'
   postconf -e "inet_protocols = ${POSTFIX_INET_PROTOCOLS}"
 }
 
-function _setup_docker_permit()
+function _setup_docker_permit
 {
   _notify 'task' 'Setting up PERMIT_DOCKER Option'
 
-  container_ip=$(ip addr show eth0 | grep 'inet ' | sed 's/[^0-9\.\/]*//g' | cut -d '/' -f 1)
-  container_network="$(echo "${container_ip}" | cut -d '.' -f1-2).0.0"
-  container_networks=$(ip -o -4 addr show type veth | grep -E -o '[0-9\.]+/[0-9]+')
+  local CONTAINER_IP CONTAINER_NETWORK
+  unset CONTAINER_NETWORKS
+  declare -a CONTAINER_NETWORKS
+
+  CONTAINER_IP=$(ip addr show "${DEFAULT_VARS['NETWORK_INTERFACE']}" | grep 'inet ' | sed 's/[^0-9\.\/]*//g' | cut -d '/' -f 1)
+  CONTAINER_NETWORK="$(echo "${CONTAINER_IP}" | cut -d '.' -f1-2).0.0"
+
+  while read -r IP
+  do
+    CONTAINER_NETWORKS+=("${IP}")
+  done < <(ip -o -4 addr show type veth | grep -E -o '[0-9\.]+/[0-9]+')
 
   case ${PERMIT_DOCKER} in
     "host" )
-      _notify 'inf' "Adding ${container_network}/16 to my networks"
-      postconf -e "$(postconf | grep '^mynetworks =') ${container_network}/16"
-      echo "${container_network}/16" >> /etc/opendmarc/ignore.hosts
-      echo "${container_network}/16" >> /etc/opendkim/TrustedHosts
+      _notify 'inf' "Adding ${CONTAINER_NETWORK}/16 to my networks"
+      postconf -e "$(postconf | grep '^mynetworks =') ${CONTAINER_NETWORK}/16"
+      echo "${CONTAINER_NETWORK}/16" >> /etc/opendmarc/ignore.hosts
+      echo "${CONTAINER_NETWORK}/16" >> /etc/opendkim/TrustedHosts
       ;;
 
     "network" )
@@ -1279,25 +1283,25 @@ function _setup_docker_permit()
       echo 172.16.0.0/12 >> /etc/opendkim/TrustedHosts
       ;;
     "connected-networks" )
-      for network in ${container_networks}
+      for NETWORK in "${CONTAINER_NETWORKS[@]}"
       do
-        network=$(_sanitize_ipv4_to_subnet_cidr "${network}")
-        _notify 'inf' "Adding docker network ${network} in my networks"
-        postconf -e "$(postconf | grep '^mynetworks =') ${network}"
-        echo "${network}" >> /etc/opendmarc/ignore.hosts
-        echo "${network}" >> /etc/opendkim/TrustedHosts
+        NETWORK=$(_sanitize_ipv4_to_subnet_cidr "${NETWORK}")
+        _notify 'inf' "Adding docker network ${NETWORK} in my networks"
+        postconf -e "$(postconf | grep '^mynetworks =') ${NETWORK}"
+        echo "${NETWORK}" >> /etc/opendmarc/ignore.hosts
+        echo "${NETWORK}" >> /etc/opendkim/TrustedHosts
       done
       ;;
     * )
       _notify 'inf' "Adding container ip in my networks"
-      postconf -e "$(postconf | grep '^mynetworks =') ${container_ip}/32"
-      echo "${container_ip}/32" >> /etc/opendmarc/ignore.hosts
-      echo "${container_ip}/32" >> /etc/opendkim/TrustedHosts
+      postconf -e "$(postconf | grep '^mynetworks =') ${CONTAINER_IP}/32"
+      echo "${CONTAINER_IP}/32" >> /etc/opendmarc/ignore.hosts
+      echo "${CONTAINER_IP}/32" >> /etc/opendkim/TrustedHosts
       ;;
   esac
 }
 
-function _setup_postfix_virtual_transport()
+function _setup_postfix_virtual_transport
 {
   _notify 'task' 'Setting up Postfix virtual transport'
 
@@ -1307,19 +1311,19 @@ function _setup_postfix_virtual_transport()
   postconf -e "virtual_transport = ${POSTFIX_DAGENT}"
 }
 
-function _setup_postfix_override_configuration()
+function _setup_postfix_override_configuration
 {
   _notify 'task' 'Setting up Postfix Override configuration'
 
   if [[ -f /tmp/docker-mailserver/postfix-main.cf ]]
   then
-    while read -r line
+    while read -r LINE
     do
       # all valid postfix options start with a lower case letter
       # http://www.postfix.org/postconf.5.html
-      if [[ ${line} =~ ^[a-z] ]]
+      if [[ ${LINE} =~ ^[a-z] ]]
       then
-        postconf -e "${line}"
+        postconf -e "${LINE}"
       fi
     done < /tmp/docker-mailserver/postfix-main.cf
     _notify 'inf' "Loaded 'config/postfix-main.cf'"
@@ -1329,11 +1333,11 @@ function _setup_postfix_override_configuration()
 
   if [[ -f /tmp/docker-mailserver/postfix-master.cf ]]
   then
-    while read -r line
+    while read -r LINE
     do
-      if [[ "${line}" =~ ^[0-9a-z] ]]
+      if [[ ${LINE} =~ ^[0-9a-z] ]]
       then
-        postconf -P "${line}"
+        postconf -P "${LINE}"
       fi
     done < /tmp/docker-mailserver/postfix-master.cf
     _notify 'inf' "Loaded 'config/postfix-master.cf'"
@@ -1345,7 +1349,7 @@ function _setup_postfix_override_configuration()
   postconf compatibility_level=2
 }
 
-function _setup_postfix_sasl_password()
+function _setup_postfix_sasl_password
 {
   _notify 'task' 'Setting up Postfix SASL Password'
 
@@ -1367,7 +1371,7 @@ function _setup_postfix_sasl_password()
   fi
 }
 
-function _setup_postfix_default_relay_host()
+function _setup_postfix_default_relay_host
 {
   _notify 'task' 'Applying default relay host to Postfix'
 
@@ -1375,7 +1379,7 @@ function _setup_postfix_default_relay_host()
   postconf -e "relayhost = ${DEFAULT_RELAY_HOST}"
 }
 
-function _setup_postfix_relay_hosts()
+function _setup_postfix_relay_hosts
 {
   _notify 'task' 'Setting up Postfix Relay Hosts'
 
@@ -1423,11 +1427,11 @@ function _setup_postfix_relay_hosts()
   then
     _notify 'inf' "Adding relay authentication from postfix-sasl-password.cf"
 
-    while read -r line
+    while read -r LINE
     do
-      if ! echo "${line}" | grep -q -e "^\s*#"
+      if ! echo "${LINE}" | grep -q -e "^\s*#"
       then
-        echo "${line}" >> /etc/postfix/sasl_passwd
+        echo "${LINE}" >> /etc/postfix/sasl_passwd
       fi
     done < /tmp/docker-mailserver/postfix-sasl-password.cf
   fi
@@ -1464,7 +1468,7 @@ function _setup_postfix_relay_hosts()
     "smtp_sender_dependent_authentication = yes"
 }
 
-function _setup_postfix_dhparam()
+function _setup_postfix_dhparam
 {
   _notify 'task' 'Setting up Postfix dhparam'
 
@@ -1475,14 +1479,14 @@ function _setup_postfix_dhparam()
     if [[ ! -f ${DHPARAMS_FILE} ]]
     then
       _notify 'inf' "Use ffdhe4096 for dhparams (postfix)"
-      rm -f /etc/postfix/dhparams.pem && cp /etc/postfix/shared/ffdhe4096.pem /etc/postfix/dhparams.pem
+      cp -f /etc/postfix/shared/ffdhe4096.pem /etc/postfix/dhparams.pem
     else
       _notify 'inf' "Use postfix dhparams that was generated previously"
       _notify 'warn' "Using self-generated dhparams is considered as insecure."
       _notify 'warn' "Unless you known what you are doing, please remove /var/mail-state/lib-shared/dhparams.pem."
 
       # Copy from the state directory to the working location
-      rm -f /etc/postfix/dhparams.pem && cp "${DHPARAMS_FILE}" /etc/postfix/dhparams.pem
+      cp -f "${DHPARAMS_FILE}" /etc/postfix/dhparams.pem
     fi
   else
     if [[ ! -f /etc/postfix/dhparams.pem ]]
@@ -1509,7 +1513,7 @@ function _setup_postfix_dhparam()
   fi
 }
 
-function _setup_dovecot_dhparam()
+function _setup_dovecot_dhparam
 {
   _notify 'task' 'Setting up Dovecot dhparam'
 
@@ -1520,14 +1524,14 @@ function _setup_dovecot_dhparam()
     if [[ ! -f ${DHPARAMS_FILE} ]]
     then
       _notify 'inf' "Use ffdhe4096 for dhparams (dovecot)"
-      rm -f /etc/dovecot/dh.pem && cp /etc/postfix/shared/ffdhe4096.pem /etc/dovecot/dh.pem
+      cp -f /etc/postfix/shared/ffdhe4096.pem /etc/dovecot/dh.pem
     else
       _notify 'inf' "Use dovecot dhparams that was generated previously"
       _notify 'warn' "Using self-generated dhparams is considered as insecure."
       _notify 'warn' "Unless you known what you are doing, please remove /var/mail-state/lib-shared/dhparams.pem."
 
       # Copy from the state directory to the working location
-      rm -f /etc/dovecot/dh.pem && cp "${DHPARAMS_FILE}" /etc/dovecot/dh.pem
+      cp -f "${DHPARAMS_FILE}" /etc/dovecot/dh.pem
     fi
   else
     if [[ ! -f /etc/dovecot/dh.pem ]]
@@ -1537,14 +1541,14 @@ function _setup_dovecot_dhparam()
         _notify 'inf' "Copy postfix dhparams to dovecot"
         cp /etc/postfix/dhparams.pem /etc/dovecot/dh.pem
       elif [[ -f /tmp/docker-mailserver/dhparams.pem ]]
-    then
+      then
         _notify 'inf' "Copy pre-generated dhparams to dovecot"
         _notify 'warn' "Using self-generated dhparams is considered as insecure."
         _notify 'warn' "Unless you known what you are doing, please remove /tmp/docker-mailserver/dhparams.pem."
 
         cp /tmp/docker-mailserver/dhparams.pem /etc/dovecot/dh.pem
       else
-    _notify 'inf' "Use ffdhe4096 for dhparams (dovecot)"
+        _notify 'inf' "Use ffdhe4096 for dhparams (dovecot)"
         cp /etc/postfix/shared/ffdhe4096.pem /etc/dovecot/dh.pem
       fi
     else
@@ -1555,7 +1559,7 @@ function _setup_dovecot_dhparam()
   fi
 }
 
-function _setup_security_stack()
+function _setup_security_stack
 {
   _notify 'task' "Setting up Security Stack"
 
@@ -1674,7 +1678,7 @@ function _setup_security_stack()
   fi
 }
 
-function _setup_logrotate()
+function _setup_logrotate
 {
   _notify 'inf' "Setting up logrotate"
 
@@ -1683,15 +1687,15 @@ function _setup_logrotate()
   case "${LOGROTATE_INTERVAL}" in
     "daily" )
       _notify 'inf' "Setting postfix logrotate interval to daily"
-      LOGROTATE="${LOGROTATE}  rotate 1\n  daily\n"
+      LOGROTATE="${LOGROTATE}  rotate 4\n  daily\n"
       ;;
     "weekly" )
       _notify 'inf' "Setting postfix logrotate interval to weekly"
-      LOGROTATE="${LOGROTATE}  rotate 1\n  weekly\n"
+      LOGROTATE="${LOGROTATE}  rotate 4\n  weekly\n"
       ;;
     "monthly" )
       _notify 'inf' "Setting postfix logrotate interval to monthly"
-      LOGROTATE="${LOGROTATE}  rotate 1\n  monthly\n"
+      LOGROTATE="${LOGROTATE}  rotate 4\n  monthly\n"
       ;;
     * ) _notify 'warn' 'LOGROTATE_INTERVAL not found in _setup_logrotate' ;;
   esac
@@ -1700,7 +1704,7 @@ function _setup_logrotate()
   echo -e "${LOGROTATE}" > /etc/logrotate.d/maillog
 }
 
-function _setup_mail_summary()
+function _setup_mail_summary
 {
   _notify 'inf' "Enable postfix summary with recipient ${PFLOGSUMM_RECIPIENT}"
 
@@ -1717,11 +1721,12 @@ function _setup_mail_summary()
       _notify 'inf' "Add postrotate action for pflogsumm report"
       sed -i "s|}|  postrotate\n    /usr/local/bin/postfix-summary ${HOSTNAME} ${PFLOGSUMM_RECIPIENT} ${PFLOGSUMM_SENDER}\n  endscript\n}\n|" /etc/logrotate.d/maillog
       ;;
+    "none" ) _notify 'inf' "Postfix log summary reports disabled. You can enable them with 'PFLOGSUMM_TRIGGER=daily_cron' or 'PFLOGSUMM_TRIGGER=logrotate'" ;;
     * ) _notify 'err' 'PFLOGSUMM_TRIGGER not found in _setup_mail_summery' ;;
   esac
 }
 
-function _setup_logwatch()
+function _setup_logwatch
 {
   _notify 'inf' "Enable logwatch reports with recipient ${LOGWATCH_RECIPIENT}"
 
@@ -1742,19 +1747,25 @@ function _setup_logwatch()
       >> /etc/cron.weekly/logwatch
       chmod 744 /etc/cron.weekly/logwatch
       ;;
+    "none" ) _notify 'inf' "Logwatch reports disabled. You can enable them with 'LOGWATCH_INTERVAL=daily' or 'LOGWATCH_INTERVAL=weekly'" ;;
     * ) _notify 'warn' 'LOGWATCH_INTERVAL not found in _setup_logwatch' ;;
   esac
 }
 
 function _setup_user_patches()
 {
-  _notify 'inf' 'Executing user-patches.sh'
-
   if [[ -f /tmp/docker-mailserver/user-patches.sh ]]
   then
-    chmod +x /tmp/docker-mailserver/user-patches.sh
-    /tmp/docker-mailserver/user-patches.sh
-    _notify 'inf' "Executed 'config/user-patches.sh'"
+    _notify 'inf' 'Executing user-patches.sh'
+    chmod +x /tmp/docker-mailserver/user-patches.sh &>/dev/null || true
+
+    if [[ -x /tmp/docker-mailserver/user-patches.sh ]]
+    then
+      /tmp/docker-mailserver/user-patches.sh
+      _notify 'inf' "Executed 'config/user-patches.sh'"
+    else
+      _notify 'err' "Could not execute user-patches.sh. Not executable!"
+    fi
   else
     _notify 'inf' "No user patches executed because optional '/tmp/docker-mailserver/user-patches.sh' is not provided."
   fi
@@ -1785,7 +1796,7 @@ function _setup_environment() {
 ##########################################################################
 
 
-function fix()
+function fix
 {
   _notify 'taskgrg' "Post-configuration checks..."
   for FUNC in "${FUNCS_FIX[@]}"
@@ -1801,7 +1812,7 @@ function fix()
   touch /dev/shm/supervisor.sock
 }
 
-function _fix_var_mail_permissions()
+function _fix_var_mail_permissions
 {
   _notify 'task' 'Checking /var/mail permissions'
 
@@ -1816,7 +1827,7 @@ function _fix_var_mail_permissions()
   fi
 }
 
-function _fix_var_amavis_permissions()
+function _fix_var_amavis_permissions
 {
   if [[ ${ONE_DIR} -eq 0 ]]
   then
@@ -1840,14 +1851,14 @@ function _fix_var_amavis_permissions()
   fi
 }
 
-function _fix_cleanup_clamav()
+function _fix_cleanup_clamav
 {
     _notify 'task' 'Cleaning up disabled Clamav'
     rm -f /etc/logrotate.d/clamav-*
     rm -f /etc/cron.d/clamav-freshclam
 }
 
-function _fix_cleanup_spamassassin()
+function _fix_cleanup_spamassassin
 {
     _notify 'task' 'Cleaning up disabled spamassassin'
     rm -f /etc/cron.daily/spamassassin
@@ -1864,7 +1875,7 @@ function _fix_cleanup_spamassassin()
 # Description: Place functions that do not fit in the sections above here
 ##########################################################################
 
-function misc()
+function misc
 {
   _notify 'taskgrp' 'Starting Misc'
 
@@ -1877,7 +1888,7 @@ function misc()
   done
 }
 
-function _misc_save_states()
+function _misc_save_states
 {
   # consolidate all states into a single directory (`/var/mail-state`) to allow persistence using docker volumes
   statedir=/var/mail-state
@@ -1932,7 +1943,7 @@ function _misc_save_states()
 # >> Start Daemons
 ##########################################################################
 
-function start_daemons()
+function start_daemons
 {
   _notify 'taskgrp' 'Starting mail server'
 
@@ -1945,25 +1956,25 @@ function start_daemons()
   done
 }
 
-function _start_daemons_cron()
+function _start_daemons_cron
 {
   _notify 'task' 'Starting cron' 'n'
   supervisorctl start cron
 }
 
-function _start_daemons_rsyslog()
+function _start_daemons_rsyslog
 {
   _notify 'task' 'Starting rsyslog ' 'n'
   supervisorctl start rsyslog
 }
 
-function _start_daemons_saslauthd()
+function _start_daemons_saslauthd
 {
   _notify 'task' 'Starting saslauthd' 'n'
   supervisorctl start "saslauthd_${SASLAUTHD_MECHANISMS}"
 }
 
-function _start_daemons_fail2ban()
+function _start_daemons_fail2ban
 {
   _notify 'task' 'Starting fail2ban ' 'n'
   touch /var/log/auth.log
@@ -1977,31 +1988,31 @@ function _start_daemons_fail2ban()
   supervisorctl start fail2ban
 }
 
-function _start_daemons_opendkim()
+function _start_daemons_opendkim
 {
   _notify 'task' 'Starting opendkim ' 'n'
   supervisorctl start opendkim
 }
 
-function _start_daemons_opendmarc()
+function _start_daemons_opendmarc
 {
   _notify 'task' 'Starting opendmarc ' 'n'
   supervisorctl start opendmarc
 }
 
-function _start_daemons_postsrsd()
+function _start_daemons_postsrsd
 {
   _notify 'task' 'Starting postsrsd ' 'n'
   supervisorctl start postsrsd
 }
 
-function _start_daemons_postfix()
+function _start_daemons_postfix
 {
   _notify 'task' 'Starting postfix' 'n'
   supervisorctl start postfix
 }
 
-function _start_daemons_dovecot()
+function _start_daemons_dovecot
 {
   # Here we are starting sasl and imap, not pop3 because it's disabled by default
   _notify 'task' 'Starting dovecot services' 'n'
@@ -2030,27 +2041,27 @@ function _start_daemons_dovecot()
   # fi
 }
 
-function _start_daemons_fetchmail()
+function _start_daemons_fetchmail
 {
   _notify 'task' 'Starting fetchmail' 'n'
   /usr/local/bin/setup-fetchmail
   supervisorctl start fetchmail
 }
 
-function _start_daemons_clamav()
+function _start_daemons_clamav
 {
   _notify 'task' 'Starting clamav' 'n'
   supervisorctl start clamav
 }
 
-function _start_daemons_postgrey()
+function _start_daemons_postgrey
 {
   _notify 'task' 'Starting postgrey' 'n'
   rm -f /var/run/postgrey/postgrey.pid
   supervisorctl start postgrey
 }
 
-function _start_daemons_amavis()
+function _start_daemons_amavis
 {
   _notify 'task' 'Starting amavis' 'n'
   supervisorctl start amavis
@@ -2065,7 +2076,7 @@ function _start_daemons_amavis()
 # Start check for update postfix-accounts and postfix-virtual
 ##########################################################################
 
-function _start_changedetector()
+function _start_changedetector
 {
   _notify 'task' 'Starting changedetector' 'n'
   supervisorctl start changedetector
@@ -2075,8 +2086,8 @@ function _start_changedetector()
 # !  CARE --> DON'T CHANGE, unless you exactly know what you are doing
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-# shellcheck source=/dev/null
-. /usr/local/bin/helper_functions.sh
+# shellcheck source=./helper-functions.sh
+. /usr/local/bin/helper-functions.sh
 
 if [[ ${DEFAULT_VARS["DMS_DEBUG"]} -eq 1 ]]
 then

@@ -19,7 +19,7 @@ A fullstack but simple mail server (SMTP, IMAP, Antispam, Antivirus...).
 Only configuration files, no SQL database. Keep it simple and versioned.
 Easy to deploy and upgrade.
 
-Why I created this image: [Simple Mail Server with Docker](http://tvi.al/simple-mail-server-with-docker/)
+[Why this image was created.](http://tvi.al/simple-mail-server-with-docker/)
 
 1. [Announcements](#announcements)
 2. [Includes](#includes)
@@ -31,17 +31,15 @@ Why I created this image: [Simple Mail Server with Docker](http://tvi.al/simple-
 
 ## Announcements
 
-1. Debian Buster is now Docker base image
-   - Filebeat was removed
-   - Dovecot was downgraded
-2. ELK was removed
-3. New contributing guidelines were added
+1. Since version `v7.1.0`, the use of default variables has changed slightly. Please consult the [environment Variables](#environment-variables) sections
+2. New contributing guidelines were added
+3. Added coherent coding style and linting
+4. Added option to use non-default network interface
 
 ## Includes
 
 - [Postfix](http://www.postfix.org) with SMTP or LDAP auth
-- [Dovecot](https://www.dovecot.org) for SASL, IMAP (and optional POP3) with ssl support, with ldap auth, sieve and [quotas](https://github.com/tomav/docker-mailserver/wiki/Configure-Accounts#mailbox-quota)
-- SASLauthd with LDAP auth
+- [Dovecot](https://www.dovecot.org) for SASL, IMAP (and optional POP3) with SSL support, with LDAP auth, Sieve and [quotas](https://github.com/tomav/docker-mailserver/wiki/Configure-Accounts#mailbox-quota)
 - [Amavis](https://www.amavis.org/)
 - [Spamassasin](http://spamassassin.apache.org/) supporting custom rules
 - [ClamAV](https://www.clamav.net/) with automatic updates
@@ -51,9 +49,10 @@ Why I created this image: [Simple Mail Server with Docker](http://tvi.al/simple-
 - [Fetchmail](http://www.fetchmail.info/fetchmail-man.html)
 - [Postscreen](http://www.postfix.org/POSTSCREEN_README.html)
 - [Postgrey](https://postgrey.schweikert.ch/)
-- basic [Sieve support](https://github.com/tomav/docker-mailserver/wiki/Configure-Sieve-filters) using dovecot
 - [LetsEncrypt](https://letsencrypt.org/) and self-signed certificates
 - [Setup script](https://github.com/tomav/docker-mailserver/wiki/Setup-docker-mailserver-using-the-script-setup.sh) to easily configure and maintain your mailserver
+- basic [Sieve support](https://github.com/tomav/docker-mailserver/wiki/Configure-Sieve-filters) using dovecot
+- SASLauthd with LDAP auth
 - persistent data and state (but think about backups!)
 - [Integration tests](https://travis-ci.org/tomav/docker-mailserver)
 - [Automated builds on docker hub](https://hub.docker.com/r/tvial/docker-mailserver/)
@@ -62,19 +61,21 @@ Why I created this image: [Simple Mail Server with Docker](http://tvi.al/simple-
 
 ## Issues & Contributing
 
-Before you open an issue, please have a look this `README`, the [Wiki](https://github.com/tomav/docker-mailserver/wiki/) and Postfix/Dovecot documentation. If you'd like to contribute, read [`CONTRIBUTING.md`](./CONTRIBUTING.md) thoroughly.
+Before opening an issue, please have a look this `README`, the [Wiki](https://github.com/tomav/docker-mailserver/wiki/) and the Postfix/Dovecot documentation.
+
+If you'd like to contribute, read [`CONTRIBUTING.md`](./CONTRIBUTING.md) thoroughly.
 
 ## Requirements
 
 Recommended:
 
-- 1 CPU
+- 1 Core
 - 1-2GB RAM
 - Swap enabled for the container
 
 Minimum:
 
-- 1 CPU
+- 1 vCore
 - 512MB RAM
 
 **Note:** You'll need to deactivate some services like ClamAV to be able to run on a host with 512MB of RAM. Even with 1G RAM you may run into problems without swap, see [FAQ](https://github.com/tomav/docker-mailserver/wiki/FAQ-and-Tips).
@@ -83,39 +84,58 @@ Minimum:
 
 ### Get the tools
 
-Download the docker-compose.yml, the .env and the setup.sh files:
+Download the `docker-compose.yml`, `compose.env`, `mailserver.env` and the `setup.sh` files:
 
 ``` BASH
-curl -o setup.sh https://raw.githubusercontent.com/tomav/docker-mailserver/master/setup.sh; chmod a+x ./setup.sh
+wget https://raw.githubusercontent.com/tomav/docker-mailserver/master/setup.sh
+wget https://raw.githubusercontent.com/tomav/docker-mailserver/master/docker-compose.yml
+wget https://raw.githubusercontent.com/tomav/docker-mailserver/master/mailserver.env
+curl -o .env https://raw.githubusercontent.com/tomav/docker-mailserver/master/compose.env
 
-curl -o docker-compose.yml https://raw.githubusercontent.com/tomav/docker-mailserver/master/docker-compose.yml.dist
-
-curl -o .env https://raw.githubusercontent.com/tomav/docker-mailserver/master/.env.dist
-
-curl -o env-mailserver https://raw.githubusercontent.com/tomav/docker-mailserver/master/env-mailserver.dist
+chmod a+x ./setup.sh
 ```
 
 ### Create a docker-compose environment
 
-- Edit the files `.env` and `env-mailserver` to your liking:
+- [Install the latest docker-compose](https://docs.docker.com/compose/install/)
+- Edit the files `.env` and `mailserver.env` to your liking:
   - `.env` contains the configuration for docker-compose
-  - `env-mailserver` contains the configuration for the mailserver container
+  - `mailserver.env` contains the configuration for the mailserver container
   - These files supports only simple `VAR=VAL` lines (see [Documentation](https://docs.docker.com/compose/env-file/)).
   - Don't quote your values.
   - Variable substitution is *not* supported (e.g. `OVERRIDE_HOSTNAME=$HOSTNAME.$DOMAINNAME`).
-- Install [docker-compose](https://docs.docker.com/compose/) in the version `1.7` or higher.
+
+**Note:** Variables in `.env` are expanded in the `docker-compose.yml` file **only** and **not** in the container. The file `mailserver.env` serves this case where environment variables are used in the container.
 
 **Note:** If you want to use a bare domain (host name equals domain name) see [FAQ](https://github.com/tomav/docker-mailserver/wiki/FAQ-and-Tips#can-i-use-nakedbare-domains-no-host-name).
 
 ### Get up and running
 
+#### Default - Without SELinux
+
 ``` BASH
 docker-compose up -d mail
+
 ./setup.sh email add <user@domain> [<password>]
 ./setup.sh config dkim
 ```
 
-Now the keys are generated, you can configure your DNS server by just pasting the content of `config/opendkim/keys/domain.tld/mail.txt` in your `domain.tld.hosts` zone.
+#### With SELinux
+
+Edit the files `.env` and `docker-compose.yml`. In `.env` uncomment the variable `SELINUX_LABEL`. If you want the volume bind mount to be shared among other containers switch `-Z` to `-z`. In `docker-compose.yml`, uncomment the line that contains `${SELINUX_LABEL}` and comment out or remove the line above.
+  
+**Note:** When using `setup.sh` use the option `-z` or `-Z`. This should match the value of `SELINUX_LABEL` in the `.env` file. See the [wiki](https://github.com/tomav/docker-mailserver/wiki/Setup-docker-mailserver-using-the-script-setup.sh) for more information regarding `setup.sh`.
+
+``` BASH
+docker-compose up -d mail
+
+./setup.sh -Z email add <user@domain> [<password>]
+./setup.sh -Z config dkim
+```
+
+### DNS - DKIM
+
+Now that the keys are generated, you can configure your DNS server by just pasting the content of `config/opendkim/keys/domain.tld/mail.txt` in your `domain.tld.hosts` zone.
 
 ### Miscellaneous
 
@@ -123,13 +143,11 @@ Now the keys are generated, you can configure your DNS server by just pasting th
 
 ``` BASH
 docker-compose down
-docker pull tvial/docker-mailserver:latest
+docker pull tvial/docker-mailserver:<VERSION TAG>
 docker-compose up -d mail
 ```
 
-You're done!
-
-And don't forget to have a look at the remaining functions of the `setup.sh` script
+You're done! And don't forget to have a look at the remaining functions of the `setup.sh` script with `./setup.sh -h`.
 
 #### SPF/Forwarding Problems
 
@@ -160,9 +178,9 @@ version: '3.8'
 services:
   mail:
     image: tvial/docker-mailserver:latest
-    hostname: mail                         # ${HOSTNAME}
-    domainname: domain.com                 # ${DOMAINNAME}
-    container_name: mail                   # ${CONTAINER_NAME}
+    hostname: mail          # ${HOSTNAME}
+    domainname: domain.com  # ${DOMAINNAME}
+    container_name: mail    # ${CONTAINER_NAME}
     ports:
       - "25:25"
       - "143:143"
@@ -200,9 +218,9 @@ version: '3.8'
 services:
   mail:
     image: tvial/docker-mailserver:latest
-    hostname: mail                         # ${HOSTNAME}
-    domainname: domain.com                 # ${DOMAINNAME}
-    container_name: mail                   # ${CONTAINER_NAME}
+    hostname: mail          # ${HOSTNAME}
+    domainname: domain.com  # ${DOMAINNAME}
+    container_name: mail    # ${CONTAINER_NAME}
     ports:
       - "25:25"
       - "143:143"
@@ -256,9 +274,7 @@ volumes:
 
 If an option doesn't work as documented here, check if you are running the latest image! Values in **bold** are the default values.
 
-### Reminder
-
-Please note: Variables in `.env` are expanded in the `docker-compose.yml` file **only** and **not** in the container. The file `env-mailserver` serves this case where environment variables are used in the container.
+**Note**: Since `docker-mailserver v7.1.0`, comparisons for environment variables are executed differently. If you previously used `VARIABLE=''` as the `empty` value, please **update** to now use `VARIABLE=`.
 
 ### Assignments
 
@@ -345,6 +361,12 @@ Set different options for mynetworks option (can be overwrite in postfix-main.cf
 - connected-networks => Add all connected docker networks (ipv4 only)
 
 Note: you probably want to [set `POSTFIX_INET_PROTOCOLS=ipv4`](#postfix_inet_protocols) to make it work fine with Docker.
+
+##### NETWORK_INTERFACE
+
+In case your network interface differs from `eth0`, e.g. when you are using HostNetworking in Kubernetes, you can set this to whatever interface you want. This interface will then be used.
+
+- **empty** => `eth0`
 
 ##### VIRUSMAILS_DELETE_DELAY
 
@@ -647,6 +669,42 @@ Note: activate this only if you are confident in your bayes database for identif
 #### Dovecot
 
 The following variables overwrite the default values for ```/etc/dovecot/dovecot-ldap.conf.ext```.
+
+##### DOVECOT_BASE
+
+- **empty** =>  same as `LDAP_SEARCH_BASE`
+- => Tell Dovecot to search only below this base entry. (e.g. `ou=people,dc=domain,dc=com`)
+
+##### DOVECOT_DEFAULT_PASS_SCHEME
+
+- **empty** =>  `SSHA`
+- => Select one crypt scheme for password hashing from this list of [password schemes](https://doc.dovecot.org/configuration_manual/authentication/password_schemes/).
+
+##### DOVECOT_DN
+
+- **empty** => same as `LDAP_BIND_DN`
+- => Bind dn for LDAP connection. (e.g. `cn=admin,dc=domain,dc=com`)
+
+##### DOVECOT_DNPASS
+
+- **empty** => same as `LDAP_BIND_PW`
+- => Password for LDAP dn sepecifified in `DOVECOT_DN`.
+
+##### DOVECOT_HOSTS
+
+- **empty** => same as `LDAP_SERVER_HOST`
+- => Specify a space separated list of LDAP hosts.
+
+##### DOVECOT_LDAP_VERSION
+
+- **empty** => 3
+- 2 => LDAP version 2 is used
+- 3 => LDAP version 3 is used
+
+##### DOVECOT_AUTH_BIND
+
+- **empty** => no
+- yes => Enable [LDAP authentication binds](https://wiki.dovecot.org/AuthDatabase/LDAP/AuthBinds)
 
 ##### DOVECOT_USER_FILTER
 

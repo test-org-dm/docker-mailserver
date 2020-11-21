@@ -1,11 +1,7 @@
-#!/bin/bash
+#! /bin/bash
 
-# version  0.1.0
-#
-# <INSERT TASK HERE>
-
-# shellcheck source=/dev/null
-. /usr/local/bin/helper_functions.sh
+# shellcheck source=./helper-functions.sh
+. /usr/local/bin/helper-functions.sh
 
 LOG_DATE=$(date +"%Y-%m-%d %H:%M:%S ")
 echo "${LOG_DATE} Start check-for-changes script."
@@ -52,8 +48,7 @@ do
   if ! cmp --silent -- "${CHKSUM_FILE}" "${CHKSUM_FILE}.new"
   then
     echo "${LOG_DATE} Change detected"
-    changed=$(grep -Fxvf "${CHKSUM_FILE}" "${CHKSUM_FILE}.new" | sed 's/^[^ ]\+  //')
-    mv "${CHKSUM_FILE}.new" "${CHKSUM_FILE}"
+    CHANGED=$(grep -Fxvf "${CHKSUM_FILE}" "${CHKSUM_FILE}.new" | sed 's/^[^ ]\+  //')
 
     # Bug alert! This overwrites the alias set by start-mailserver.sh
     # Take care that changes in one script are propagated to the other
@@ -68,9 +63,9 @@ do
     (
       flock -e 200
 
-      for file in ${changed}
+      for FILE in ${CHANGED}
       do
-        case ${file} in
+        case ${FILE} in
           /etc/letsencrypt/acme.json)
             for certdomain in ${SSL_DOMAIN} ${HOSTNAME} ${DOMAINNAME}
             do
@@ -93,8 +88,8 @@ do
       postalias /etc/aliases
 
       # regenerate postfix accounts
-      echo -n >/etc/postfix/vmailbox
-      echo -n >/etc/dovecot/userdb
+      : >/etc/postfix/vmailbox
+      : >/etc/dovecot/userdb
 
       if [[ -f /tmp/docker-mailserver/postfix-accounts.cf ]] && [[ ${ENABLE_LDAP} -ne 1 ]]
       then
@@ -113,7 +108,7 @@ do
         if [[ -n ${RELAY_HOST} ]]
         then
           # keep old config
-          echo -n >/etc/postfix/sasl_passwd
+          : >/etc/postfix/sasl_passwd
           if [[ -n ${SASL_PASSWD} ]]
           then
             echo "${SASL_PASSWD}" >>/etc/postfix/sasl_passwd
@@ -122,13 +117,13 @@ do
           # add domain-specific auth from config file
           if [[ -f /tmp/docker-mailserver/postfix-sasl-password.cf ]]
           then
-            (grep -v "^\s*$\|^\s*\#" /tmp/docker-mailserver/postfix-sasl-password.cf || true) | while read -r line
+            while read -r LINE
             do
-              if ! echo "${line}" | grep -q -e "\s*#"
+              if ! echo "${LINE}" | grep -q -e "\s*#"
               then
-                echo "${line}" >>/etc/postfix/sasl_passwd
+                echo "${LINE}" >>/etc/postfix/sasl_passwd
               fi
-            done
+            done < <(grep -v "^\s*$\|^\s*\#" /tmp/docker-mailserver/postfix-sasl-password.cf || true)
           fi
 
           # add default relay
@@ -140,38 +135,38 @@ do
 
         # creating users ; 'pass' is encrypted
         # comments and empty lines are ignored
-        grep -v "^\s*$\|^\s*\#" /tmp/docker-mailserver/postfix-accounts.cf | while IFS=$'|' read -r login pass
+        while IFS=$'|' read -r LOGIN PASS
         do
-          user=$(echo "${login}" | cut -d @ -f1)
-          domain=$(echo "${login}" | cut -d @ -f2)
+          USER=$(echo "${LOGIN}" | cut -d @ -f1)
+          DOMAIN=$(echo "${LOGIN}" | cut -d @ -f2)
 
           user_attributes=""
           # test if user has a defined quota
           if [[ -f /tmp/docker-mailserver/dovecot-quotas.cf ]]
           then
             declare -a USER_QUOTA
-            IFS=':' ; read -r -a USER_QUOTA < <(grep "${user}@${domain}:" -i /tmp/docker-mailserver/dovecot-quotas.cf)
+            IFS=':' ; read -r -a USER_QUOTA < <(grep "${USER}@${DOMAIN}:" -i /tmp/docker-mailserver/dovecot-quotas.cf)
             unset IFS
 
             [[ ${#USER_QUOTA[@]} -eq 2 ]] && user_attributes="${user_attributes}userdb_quota_rule=*:bytes=${USER_QUOTA[1]}"
           fi
 
-          echo "${login} ${domain}/${user}/" >>/etc/postfix/vmailbox
+          echo "${LOGIN} ${DOMAIN}/${USER}/" >>/etc/postfix/vmailbox
 
           # user database for dovecot has the following format:
           # user:password:uid:gid:(gecos):home:(shell):extra_fields
           # example :
-          # ${login}:${pass}:5000:5000::/var/mail/${domain}/${user}::userdb_mail=maildir:/var/mail/${domain}/${user}
-          echo "${login}:${pass}:5000:5000::/var/mail/${domain}/${user}::${user_attributes}" >>/etc/dovecot/userdb
-          mkdir -p "/var/mail/${domain}/${user}"
+          # ${LOGIN}:${PASS}:5000:5000::/var/mail/${DOMAIN}/${USER}::userdb_mail=maildir:/var/mail/${DOMAIN}/${USER}
+          echo "${LOGIN}:${PASS}:5000:5000::/var/mail/${DOMAIN}/${USER}::${user_attributes}" >>/etc/dovecot/userdb
+          mkdir -p "/var/mail/${DOMAIN}/${USER}"
 
-          if [[ -e /tmp/docker-mailserver/${login}.dovecot.sieve ]]
+          if [[ -e /tmp/docker-mailserver/${LOGIN}.dovecot.sieve ]]
           then
-            cp "/tmp/docker-mailserver/${login}.dovecot.sieve" "/var/mail/${domain}/${user}/.dovecot.sieve"
+            cp "/tmp/docker-mailserver/${LOGIN}.dovecot.sieve" "/var/mail/${DOMAIN}/${USER}/.dovecot.sieve"
           fi
 
-          echo "${domain}" >>/tmp/vhost.tmp
-        done
+          echo "${DOMAIN}" >>/tmp/vhost.tmp
+        done < <(grep -v "^\s*$\|^\s*\#" /tmp/docker-mailserver/postfix-accounts.cf)
       fi
 
       [[ -n ${RELAY_HOST} ]] && _populate_relayhost_map
@@ -186,8 +181,8 @@ do
       if [[ -f postfix-virtual.cf ]]
       then
         # regenerate postfix aliases
-        echo -n >/etc/postfix/virtual
-        echo -n >/etc/postfix/regexp
+        : >/etc/postfix/virtual
+        : >/etc/postfix/regexp
 
         if [[ -f /tmp/docker-mailserver/postfix-virtual.cf ]]
         then
@@ -195,14 +190,14 @@ do
 
           # the `to` seems to be important; don't delete it
           # shellcheck disable=SC2034
-          (grep -v "^\s*$\|^\s*\#" /tmp/docker-mailserver/postfix-virtual.cf || true) | while read -r from to
+          while read -r FROM TO
           do
-            uname=$(echo "${from}" | cut -d @ -f1)
-            domain=$(echo "${from}" | cut -d @ -f2)
+            UNAME=$(echo "${FROM}" | cut -d @ -f1)
+            DOMAIN=$(echo "${FROM}" | cut -d @ -f2)
 
             # if they are equal it means the line looks like: "user1	 other@domain.tld"
-            [ "${uname}" != "${domain}" ] && echo "${domain}" >>/tmp/vhost.tmp
-          done
+            [ "${UNAME}" != "${DOMAIN}" ] && echo "${DOMAIN}" >>/tmp/vhost.tmp
+          done  < <(grep -v "^\s*$\|^\s*\#" /tmp/docker-mailserver/postfix-virtual.cf || true)
         fi
 
         if [[ -f /tmp/docker-mailserver/postfix-regexp.cf ]]
@@ -231,6 +226,9 @@ s/$/ regexp:\/etc\/postfix\/regexp/
       # prevent restart of dovecot when smtp_only=1
       [[ ${SMTP_ONLY} -ne 1 ]] && supervisorctl restart dovecot
     ) 200<postfix-accounts.cf # end lock
+
+    # mark changes as applied
+    mv "${CHKSUM_FILE}.new" "${CHKSUM_FILE}"
   fi
 
   sleep 1

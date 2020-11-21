@@ -1,24 +1,36 @@
-#!/bin/bash
+#! /bin/bash
 
 # Wrapper for various setup scripts
-# included in the docker-mailserver
+# included in docker-mailserver
+
+SCRIPT='SETUP'
 
 set -euEo pipefail
-trap '_report_err ${_} ${LINENO} ${?}' ERR
+trap '__log_err ${FUNCNAME[0]:-"?"} ${_:-"?"} ${LINENO:-"?"} ${?:-"?"}' ERR
+trap '_unset_vars || :' EXIT
 
-function _report_err()
+function __log_err
 {
-  echo "ERROR occured :: source ${1} ; line ${2} ; exit code ${3} ;;" >&2
-  _unset_vars
+  local FUNC_NAME LINE EXIT_CODE
+  FUNC_NAME="${1} / ${2}"
+  LINE="${3}"
+  EXIT_CODE="${4}"
+
+  printf "\n––– \e[1m\e[31mUNCHECKED ERROR\e[0m\n%s\n%s\n%s\n%s\n\n" \
+    "  – script    = ${SCRIPT,,}.sh" \
+    "  – function  = ${FUNC_NAME}" \
+    "  – line      = ${LINE}" \
+    "  – exit code = ${EXIT_CODE}"
 }
 
-function _unset_vars()
+function _unset_vars
 {
   unset CDIR CRI INFO IMAGE_NAME CONTAINER_NAME DEFAULT_CONFIG_PATH
   unset USE_CONTAINER WISHED_CONFIG_PATH CONFIG_PATH VOLUME USE_TTY
+  unset SCRIPT USING_SELINUX
 }
 
-function _get_current_directory()
+function _get_current_directory
 {
   if dirname "$(readlink -f "${0}")" &>/dev/null
   then
@@ -43,8 +55,9 @@ WISHED_CONFIG_PATH=
 CONFIG_PATH=
 VOLUME=
 USE_TTY=
+USING_SELINUX=
 
-function _check_root()
+function _check_root
 {
   if [[ ${EUID} -ne 0 ]]
   then
@@ -53,7 +66,7 @@ function _check_root()
   fi
 }
 
-function _update_config_path()
+function _update_config_path
 {
   if [[ -n ${CONTAINER_NAME} ]]
   then
@@ -68,7 +81,7 @@ function _update_config_path()
   fi
 }
 
-function _inspect()
+function _inspect
 {
   if _docker_image_exists "${IMAGE_NAME}"
   then
@@ -86,9 +99,11 @@ function _inspect()
   fi
 }
 
-function _usage()
+function _usage
 {
-  echo "Usage: ${0} [-i IMAGE_NAME] [-c CONTAINER_NAME] <subcommand> <subcommand> [args]
+  echo "${SCRIPT,,}.sh Bootstrapping Script
+
+Usage: ${0} [-i IMAGE_NAME] [-c CONTAINER_NAME] <subcommand> <subcommand> [args]
 
 OPTIONS:
 
@@ -98,7 +113,17 @@ OPTIONS:
 
   -c CONTAINER_NAME The name of the running container.
 
-  -p PATH           config folder path (default: ${CDIR}/config)
+  -p PATH           Config folder path (default: ${CDIR}/config)
+
+  -h                Show this help dialogue
+
+  -z                Allow container access to the bind mount content
+                    that is shared among multiple containers
+                    on a SELinux-enabled host.
+
+  -Z                Allow container access to the bind mount content
+                    that is private and unshared with other containers
+                    on a SELinux-enabled host.
 
 SUBCOMMANDS:
 
@@ -138,10 +163,12 @@ SUBCOMMANDS:
     ${0} debug inspect
     ${0} debug login <commands>
 
+  help: Show this help dialogue
+
 "
 }
 
-function _docker_image_exists()
+function _docker_image_exists
 {
   if ${CRI} history -q "${1}" >/dev/null 2>&1
   then
@@ -151,7 +178,7 @@ function _docker_image_exists()
   fi
 }
 
-function _docker_image()
+function _docker_image
 {
   if ${USE_CONTAINER}
   then
@@ -166,12 +193,12 @@ function _docker_image()
     fi
 
     ${CRI} run --rm \
-      -v "${CONFIG_PATH}":/tmp/docker-mailserver \
+      -v "${CONFIG_PATH}":/tmp/docker-mailserver"${USING_SELINUX}" \
       "${USE_TTY}" "${IMAGE_NAME}" "${@}"
   fi
 }
 
-function _docker_container()
+function _docker_container
 {
   if [[ -n ${CONTAINER_NAME} ]]
   then
@@ -182,7 +209,7 @@ function _docker_container()
   fi
 }
 
-function _main()
+function _main
 {
   if [[ -n $(command -v docker) ]]
   then
@@ -222,15 +249,27 @@ function _main()
   fi
 
   local OPTIND
-  while getopts ":c:i:p:" OPT
+  while getopts ":c:i:p:hzZ" OPT
   do
     case ${OPT} in
-      c) CONTAINER_NAME="${OPTARG}" ; USE_CONTAINER=true ;; # container specified, connect to running instance
-      i) IMAGE_NAME="${OPTARG}" ;;
-      p)
+      i ) IMAGE_NAME="${OPTARG}" ;;
+      z ) USING_SELINUX=":z"     ;;
+      Z ) USING_SELINUX=":Z"     ;;
+      c )
+        # container specified, connect to running instance
+        CONTAINER_NAME="${OPTARG}"
+        USE_CONTAINER=true
+        ;;
+
+      h )
+        _usage
+        return
+        ;;
+
+      p )
         case "${OPTARG}" in
-          /*) WISHED_CONFIG_PATH="${OPTARG}" ;;
-          * ) WISHED_CONFIG_PATH="${CDIR}/${OPTARG}" ;;
+          /* ) WISHED_CONFIG_PATH="${OPTARG}"         ;;
+          *  ) WISHED_CONFIG_PATH="${CDIR}/${OPTARG}" ;;
         esac
 
         if [[ ! -d ${WISHED_CONFIG_PATH} ]]
@@ -240,10 +279,15 @@ function _main()
           exit 40
         fi
         ;;
-     *) echo "Invalid option: -${OPTARG}" >&2 ;;
+
+      * )
+        echo "Invalid option: -${OPTARG}" >&2
+        ;;
+
     esac
   done
-  shift $((OPTIND-1))
+
+  shift $(( OPTIND - 1 ))
 
   if [[ -z ${WISHED_CONFIG_PATH} ]]
   then
@@ -321,14 +365,13 @@ function _main()
             _docker_container /bin/bash -c "${@}"
           fi
           ;;
-        *        ) _usage ; _unset_vars ; exit 1 ;;
+        *        ) _usage ; exit 1 ;;
       esac
       ;;
 
-    *            ) _usage ; _unset_vars ; exit 1 ;;
+    help ) _usage ;;
+    *    ) _usage ; exit 1 ;;
   esac
-
-  _unset_vars
 }
 
 _main "${@}"

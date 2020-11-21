@@ -88,12 +88,6 @@ RUN \
   unzip \
   whois \
   xz-utils \
-  # use Dovecot community repo to react faster on security updates
-  #curl https://repo.dovecot.org/DOVECOT-REPO-GPG | gpg --import && \
-  #gpg --export ED409DA1 > /etc/apt/trusted.gpg.d/dovecot.gpg && \
-  #echo "deb https://repo.dovecot.org/ce-2.3-latest/debian/stretch stretch main" > /etc/apt/sources.list.d/dovecot-community.list && \
-  #apt-get update -q --fix-missing && \
-  #apt-get -y install --no-install-recommends \
   dovecot-core \
   dovecot-imapd \
   dovecot-ldap \
@@ -174,7 +168,8 @@ RUN sed -i -r 's/#(@|   \\%)bypass/\1bypass/g' /etc/amavis/conf.d/15-content_fil
   # no syslog user in debian compared to ubuntu
   adduser --system syslog && \
   useradd -u 5000 -d /home/docker -s /bin/bash -p "$(echo docker | openssl passwd -1 -stdin)" docker && \
-  echo "0 4 * * * /usr/local/bin/virus-wiper" | crontab -
+  echo "0 4 * * * /usr/local/bin/virus-wiper" | crontab - && \
+  chmod 644 /etc/amavis/conf.d/*
 
 # Configure Fail2ban
 COPY target/fail2ban/jail.conf /etc/fail2ban/jail.conf
@@ -233,7 +228,7 @@ RUN curl -s https://letsencrypt.org/certs/lets-encrypt-x3-cross-signed.pem > /et
 
 COPY ./target/bin /usr/local/bin
 # Start-mailserver script
-COPY ./target/helper_functions.sh ./target/check-for-changes.sh ./target/start-mailserver.sh ./target/fail2ban-wrapper.sh ./target/postfix-wrapper.sh ./target/postsrsd-wrapper.sh ./target/docker-configomat/configomat.sh /usr/local/bin/
+COPY ./target/bin-helper.sh ./target/helper-functions.sh ./target/check-for-changes.sh ./target/start-mailserver.sh ./target/fail2ban-wrapper.sh ./target/postfix-wrapper.sh ./target/postsrsd-wrapper.sh ./target/docker-configomat/configomat.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/*
 
 # Configure supervisor

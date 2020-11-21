@@ -9,17 +9,19 @@ function teardown() {
 }
 
 function setup_file() {
-    pushd test/docker-openldap/
+    pushd test/docker-openldap/ || return 1
     docker build -f Dockerfile -t ldap --no-cache .
-    popd
+    popd || return 1
 
     docker run -d --name ldap_for_mail \
 		-e LDAP_DOMAIN="localhost.localdomain" \
-		-h ldap.my-domain.com -t ldap        
-    
+		-h ldap.my-domain.com -t ldap
+
+    local PRIVATE_CONFIG
+    PRIVATE_CONFIG="$(duplicate_config_for_container .)"
     docker run -d --name mail_with_ldap \
-		-v "`pwd`/test/config":/tmp/docker-mailserver \
-		-v "`pwd`/test/test-files":/tmp/docker-mailserver-test:ro \
+		-v "${PRIVATE_CONFIG}":/tmp/docker-mailserver \
+		-v "$(pwd)/test/test-files":/tmp/docker-mailserver-test:ro \
 		-e ENABLE_LDAP=1 \
 		-e LDAP_SERVER_HOST=ldap \
 		-e LDAP_START_TLS=no \
@@ -44,7 +46,7 @@ function setup_file() {
 		-e POSTMASTER_ADDRESS=postmaster@localhost.localdomain \
 		-e DMS_DEBUG=0 \
 		--link ldap_for_mail:ldap \
-		-h mail.my-domain.com -t ${NAME}
+		-h mail.my-domain.com -t "${NAME}"
     wait_for_smtp_port_in_container mail_with_ldap
 }
 
@@ -53,7 +55,7 @@ function teardown_file() {
 }
 
 @test "first" {
-  # this test must come first to reliably identify when to run setup_file
+  skip 'only used to call setup_file from setup'
 }
 
 # processes
@@ -214,7 +216,7 @@ function teardown_file() {
 # Pflogsumm delivery check
 #
 
-@test "checking pflogsum delivery" { 
+@test "checking pflogsum delivery" {
   # checking default sender is correctly set when env variable not defined
   run docker exec mail_with_ldap grep "mailserver-report@mail.my-domain.com" /etc/logrotate.d/maillog
   assert_success
@@ -234,5 +236,5 @@ function teardown_file() {
 }
 
 @test "last" {
-  # this test is only there to reliably mark the end for the teardown_file
+  skip 'only used to call teardown_file from teardown'
 }

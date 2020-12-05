@@ -231,15 +231,16 @@ function _main
 
   IMAGE_NAME=${INFO%;*}
   CONTAINER_NAME=${INFO#*;}
+  echo "DEBUG: INFO=${INFO}"
 
   if [[ -z ${IMAGE_NAME} ]]
   then
     if [[ ${CRI} == "docker" ]]
     then
-      IMAGE_NAME=tvial/docker-mailserver:latest
+      IMAGE_NAME=${NAME}
     elif [[ ${CRI} == "podman" ]]
     then
-      IMAGE_NAME=docker.io/tvial/docker-mailserver:latest
+      IMAGE_NAME=docker.io/${NAME}
     fi
   fi
 

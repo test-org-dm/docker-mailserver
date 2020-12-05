@@ -36,8 +36,8 @@ jobs:
           context: .
           file: ./Dockerfile
           build-args: |
-            VCS_REF=${{ GITHUB_SHA }}
-            VCS_VERSION=${{ GITHUB_REF }}
+            VCS_REF=${{ github.sha }}
+            VCS_VERSION=${{ github.ref }}
           # platforms: linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64,linux/ppc64le,linux/s390x
           platforms: linux/amd64,linux/arm64 # while developing to save time
           pull: true
@@ -45,7 +45,7 @@ jobs:
           push: false
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/test-dm:latest
-            ${{ secrets.DOCKER_USERNAME }}/test-dm:${{ GITHUB_SHA::8 }}
+            ${{ secrets.DOCKER_USERNAME }}/test-dm:${{ github.sha }}
   test:
     needs: build
     runs-on: ubuntu-latest

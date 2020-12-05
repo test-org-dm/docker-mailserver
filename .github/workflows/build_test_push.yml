@@ -47,7 +47,7 @@ jobs:
             ${{ secrets.DOCKER_USERNAME }}/test-dm:latest
             ${{ secrets.DOCKER_USERNAME }}/test-dm:${{ github.sha }}
   test:
-    needs: build
+    needs: build_docker
     runs-on: ubuntu-latest
     steps:
       -

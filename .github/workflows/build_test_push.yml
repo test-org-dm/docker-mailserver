@@ -41,10 +41,9 @@ jobs:
           # platforms: linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64,linux/ppc64le,linux/s390x
           platforms: linux/amd64,linux/arm64 # while developing to save time
           pull: true
-          load: true
-          push: false
+          push: true
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/test-dm:latest
+            ${{ secrets.DOCKER_USERNAME }}/test-dm:test
             ${{ secrets.DOCKER_USERNAME }}/test-dm:${{ github.sha }}
   test:
     needs: build_docker

@@ -232,6 +232,8 @@ function _main
   IMAGE_NAME=${INFO%;*}
   CONTAINER_NAME=${INFO#*;}
   echo "DEBUG: INFO=${INFO}"
+  echo "DEBUG: PRE_IMAGE_NAME=${IMAGE_NAME}"
+  echo "DEBUG: PRE_CONTAINER_NAME=${CONTAINER_NAME}"
 
   if [[ -z ${IMAGE_NAME} ]]
   then
@@ -243,6 +245,8 @@ function _main
       IMAGE_NAME=docker.io/${NAME}
     fi
   fi
+
+  echo "DEBUG: POST_IMAGE_NAME=${IMAGE_NAME}"
 
   if tty -s
   then

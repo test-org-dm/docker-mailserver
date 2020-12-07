@@ -3,7 +3,7 @@ FROM debian:buster-slim
 ARG VCS_REF
 ARG VCS_VERSION
 
-LABEL maintainer="Thomas VIAL"  \
+LABEL maintainer="Thomas VIAL" \
   org.label-schema.name="docker-mailserver" \
   org.label-schema.description="A fullstack but simple mailserver (smtp, imap, antispam, antivirus, ssl...)" \
   org.label-schema.url="https://github.com/tomav/docker-mailserver" \

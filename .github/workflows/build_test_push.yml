@@ -99,7 +99,6 @@ jobs:
         env:
           CI: true
           NAME: ${{ secrets.DOCKER_USERNAME }}/test-dm:${{ github.sha }}
-          IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/test-dm:${{ github.sha }}
           HADOLINT_VERSION: 1.18.0
           SHELLCHECK_VERSION: 0.7.1
           ECLINT_VERSION: 2.1.0

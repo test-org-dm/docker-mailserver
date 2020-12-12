@@ -1,10 +1,18 @@
 SHELL = /bin/bash
 
+NAME ?= tvial/docker-mailserver:testing
+
 VCS_REF := $(shell git rev-parse --short HEAD)
 VCS_VERSION := $(shell git describe --tags --contains --always)
 
-all: backup generate-accounts tests clean
-complete_test: lint generate-accounts tests
+all: build backup generate-accounts tests clean
+no-build: backup generate-accounts tests clean
+complete_test: lint build generate-accounts tests
+
+build:
+       docker build -t $(NAME) . \
+               --build-arg VCS_REF=$(VCS_REF) \
+               --build-arg VCS_VERSION=$(VCS_VERSION) \
 
 backup:
 # if backup directories exist, clean hasn't been called, therefore

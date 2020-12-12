@@ -239,10 +239,10 @@ function _main
   then
     if [[ ${CRI} == "docker" ]]
     then
-      IMAGE_NAME=${NAME}
+      IMAGE_NAME=${NAME:-tvial/docker-mailserver:latest}
     elif [[ ${CRI} == "podman" ]]
     then
-      IMAGE_NAME=docker.io/${NAME}
+      IMAGE_NAME=docker.io/${NAME:-tvial/docker-mailserver:latest}
     fi
   fi
 

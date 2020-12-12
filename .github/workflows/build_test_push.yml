@@ -101,7 +101,7 @@ jobs:
       #     # cache-from: type=local,src=/tmp/.buildx-cache
       #     # cache-to: type=local,dest=/tmp/.buildx-cache
   test:
-#    needs: build_docker
+    needs: build_docker
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

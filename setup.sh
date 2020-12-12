@@ -202,8 +202,10 @@ function _docker_container
 {
   if [[ -n ${CONTAINER_NAME} ]]
   then
-    echo "invoking ${CRI} exec ${USE_TTY} ${CONTAINER_NAME}" "${@}"
-    ${CRI} exec "${USE_TTY}" "${CONTAINER_NAME}" "${@}"
+    # CMD="${CRI} exec "${USE_TTY}" "${CONTAINER_NAME}" "${@}""
+    CMD="${CRI} exec "${CONTAINER_NAME}" "${@}""
+    echo "invoking ${CMD}"
+    ${CMD}
   else
     echo "The docker-mailserver is not running!"
     exit 5

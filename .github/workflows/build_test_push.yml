@@ -19,7 +19,7 @@ jobs:
       - name: Prep path
         run: |
           mkdir ~/bin
-          echo ~/bin >> $GITHUB_PATH
+          content=$(cat $GITHUB_PATH) && echo -en "~/bin\n$content" > $GITHUB_PATH
       - name: HADOLINT
         run: |
           curl -L https://github.com/hadolint/hadolint/releases/download/v${HADOLINT_VERSION}/hadolint-$(uname -s)-$(uname -m) -o ~/bin/hadolint

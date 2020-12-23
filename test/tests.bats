@@ -1411,7 +1411,7 @@ EOF
 @test "checking setup.sh: setup.sh debug inspect" {
   run ./setup.sh -c mail debug inspect
   assert_success
-  assert_line --index 0 "Image: ${NAME}"
+  assert_line --index 0 "Image: tvial/docker-mailserver:latest"
   assert_line --index 1 "Container: mail"
 }
 @test "checking setup.sh: setup.sh debug login ls" {

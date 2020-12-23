@@ -202,10 +202,7 @@ function _docker_container
 {
   if [[ -n ${CONTAINER_NAME} ]]
   then
-    # DCCMD="${CRI} exec "${USE_TTY}" "${CONTAINER_NAME}" "${@}""
-    DCCMD="${CRI} exec ${CONTAINER_NAME} ${*}"
-    # echo "invoking ${DCCMD}"
-    ${DCCMD}
+    ${CRI} exec "${USE_TTY}" "${CONTAINER_NAME}" "${@}"
   else
     echo "The docker-mailserver is not running!"
     exit 5
@@ -234,22 +231,17 @@ function _main
 
   IMAGE_NAME=${INFO%;*}
   CONTAINER_NAME=${INFO#*;}
-  # echo "DEBUG: INFO=${INFO}"
-  # echo "DEBUG: PRE_IMAGE_NAME=${IMAGE_NAME}"
-  # echo "DEBUG: PRE_CONTAINER_NAME=${CONTAINER_NAME}"
 
   if [[ -z ${IMAGE_NAME} ]]
   then
     if [[ ${CRI} == "docker" ]]
     then
-      IMAGE_NAME=${NAME:-tvial/docker-mailserver:latest}
+      IMAGE_NAME=tvial/docker-mailserver:latest
     elif [[ ${CRI} == "podman" ]]
     then
-      IMAGE_NAME=docker.io/${NAME:-tvial/docker-mailserver:latest}
+      IMAGE_NAME=docker.io/tvial/docker-mailserver:latest
     fi
   fi
-
-  # echo "DEBUG: POST_IMAGE_NAME=${IMAGE_NAME}"
 
   if tty -s
   then

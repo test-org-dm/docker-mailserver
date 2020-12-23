@@ -251,7 +251,7 @@ function _main
 
   # echo "DEBUG: POST_IMAGE_NAME=${IMAGE_NAME}"
 
-  if tty -s
+  if test -t 0
   then
     USE_TTY="-ti"
   else

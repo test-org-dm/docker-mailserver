@@ -16,10 +16,8 @@ jobs:
         uses: actions/checkout@v2
         with:
           submodules: recursive
-      - name: Prep environment
+      - name: Prep path
         run: |
-          apt update
-          apt install -y make git
           mkdir ~/bin
           echo ~/bin >> $GITHUB_PATH
       - name: HADOLINT

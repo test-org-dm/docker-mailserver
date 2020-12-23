@@ -108,7 +108,6 @@ jobs:
           submodules: recursive
       - name: run test suite
         run: |
-          bash -c 'make generate-accounts tests'
+          NAME=afaerber0815/test-dm:${GITHUB_SHA::8} bash -c 'make generate-accounts tests'
         env:
           CI: true
-          NAME: afaerber0815/test-dm:${GITHUB_SHA::8}

@@ -252,6 +252,8 @@ function _main
   if test -t 0
   then
     USE_TTY="-ti"
+  else
+    USE_TTY="-t"
   fi
 
   local OPTIND

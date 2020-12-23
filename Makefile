@@ -27,7 +27,7 @@ generate-accounts:
 	@ echo "           # this is also a test comment, :O" >> test/config/postfix-accounts.cf
 
 tests:
-	./test/bats/bin/bats -j 2 test/*.bats
+	./test/bats/bin/bats test/*.bats
 
 .PHONY: ALWAYS_RUN
 test/%.bats: ALWAYS_RUN

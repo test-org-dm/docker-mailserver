@@ -20,7 +20,7 @@ jobs:
         run: |
           mkdir ~/bin
           echo ~/bin >> $GITHUB_PATH
-          sudo apt remote -y shellcheck
+          sudo apt remove -y shellcheck
       - name: HADOLINT
         run: |
           curl -L https://github.com/hadolint/hadolint/releases/download/v${HADOLINT_VERSION}/hadolint-$(uname -s)-$(uname -m) -o ~/bin/hadolint

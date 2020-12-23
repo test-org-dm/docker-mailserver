@@ -126,8 +126,12 @@ function teardown_file() {
 @test "checking setup.sh: setup.sh debug fail2ban" {
 
   run docker exec mail_fail2ban /bin/sh -c "fail2ban-client set dovecot banip 192.0.66.4"
+  assert_success
   run docker exec mail_fail2ban /bin/sh -c "fail2ban-client set dovecot banip 192.0.66.5"
+  assert_success
+
   sleep 10
+
   run ./setup.sh -c mail_fail2ban debug fail2ban
   assert_output --regexp "^Banned in dovecot: 192.0.66.5, 192.0.66.4.*"
   run ./setup.sh -c mail_fail2ban debug fail2ban unban 192.0.66.4

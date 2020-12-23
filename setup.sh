@@ -254,6 +254,8 @@ function _main
   if tty -s
   then
     USE_TTY="-ti"
+  else
+    USE_TTY="-t"
   fi
 
   local OPTIND

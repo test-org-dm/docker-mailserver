@@ -183,7 +183,7 @@ function _docker_image
   if ${USE_CONTAINER}
   then
     # reuse existing container specified on command line
-    echo ${CRI} exec "${USE_TTY}" "${CONTAINER_NAME}" "${@}"
+    echo "${CRI}" exec "${USE_TTY}" "${CONTAINER_NAME}" "${@}"
     ${CRI} exec "${USE_TTY}" "${CONTAINER_NAME}" "${@}"
   else
     # start temporary container with specified image
@@ -193,7 +193,7 @@ function _docker_image
       ${CRI} pull "${IMAGE_NAME}"
     fi
 
-    echo ${CRI} run --rm \
+    echo "${CRI}" run --rm \
       -v "${CONFIG_PATH}":/tmp/docker-mailserver"${USING_SELINUX}" \
       "${USE_TTY}" "${IMAGE_NAME}" "${@}"
 
@@ -207,7 +207,7 @@ function _docker_container
 {
   if [[ -n ${CONTAINER_NAME} ]]
   then
-    echo ${CRI} exec "${USE_TTY}" "${CONTAINER_NAME}" "${@}"
+    echo "${CRI}" exec "${USE_TTY}" "${CONTAINER_NAME}" "${@}"
     ${CRI} exec "${USE_TTY}" "${CONTAINER_NAME}" "${@}"
   else
     echo "The docker-mailserver is not running!"

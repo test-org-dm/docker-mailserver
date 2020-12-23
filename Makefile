@@ -1,5 +1,4 @@
 SHELL = /bin/bash
-PATH = $(HOME)/bin:$(PATH)
 
 NAME = tvial/docker-mailserver:latest
 VCS_REF := $(shell git rev-parse --short HEAD)

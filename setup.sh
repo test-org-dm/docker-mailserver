@@ -231,9 +231,6 @@ function _main
 
   IMAGE_NAME=${INFO%;*}
   CONTAINER_NAME=${INFO#*;}
-  # echo "DEBUG: INFO=${INFO}"
-  # echo "DEBUG: PRE_IMAGE_NAME=${IMAGE_NAME}"
-  # echo "DEBUG: PRE_CONTAINER_NAME=${CONTAINER_NAME}"
 
   if [[ -z ${IMAGE_NAME} ]]
   then
@@ -245,8 +242,6 @@ function _main
       IMAGE_NAME=docker.io/${NAME:-tvial/docker-mailserver:latest}
     fi
   fi
-
-  # echo "DEBUG: POST_IMAGE_NAME=${IMAGE_NAME}"
 
   if test -t 0
   then

@@ -6,8 +6,8 @@ load 'test_helper/bats-assert/load'
 # shellcheck disable=SC2034
 NAME=${NAME:-tvial/docker-mailserver:testing}
 
-# default timeout is 180 seconds
-TEST_TIMEOUT_IN_SECONDS=${TEST_TIMEOUT_IN_SECONDS-180}
+# default timeout is 120 seconds
+TEST_TIMEOUT_IN_SECONDS=${TEST_TIMEOUT_IN_SECONDS-120}
 NUMBER_OF_LOG_LINES=${NUMBER_OF_LOG_LINES-10}
 
 # @param ${1} timeout

@@ -1,4 +1,4 @@
-name: CI-WIP
+name: Build, test and push
 
 on:
   pull_request:

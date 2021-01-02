@@ -1,18 +1,18 @@
-# docker-mailserver
+# A fullstack but simple, Docker-based mail server
 
 ![build_status] [![docker_pulls]][docker::hub]
 
 [![gh_stars]][repo] [![contributors]][repo] [![forks]][repo]
 
-[build_status]: https://img.shields.io/travis/tomav/docker-mailserver/master?style=for-the-badge
+[build_status]: https://github.com/docker-mailserver/docker-mailserver/workflows/CI/badge.svg
 
-[docker_pulls]: https://img.shields.io/docker/pulls/tvial/docker-mailserver.svg?style=for-the-badge
-[docker::hub]: https://hub.docker.com/r/tvial/docker-mailserver/
+[docker_pulls]: https://img.shields.io/docker/pulls/docker-mailserver/docker-mailserver.svg?style=for-the-badge
+[docker::hub]: https://hub.docker.com/r/docker-mailserver/docker-mailserver/
 
-[gh_stars]: https://img.shields.io/github/stars/tomav/docker-mailserver.svg?label=github%20%E2%98%85&style=for-the-badge
-[contributors]: https://img.shields.io/github/contributors/tomav/docker-mailserver.svg?style=for-the-badge
-[forks]: https://img.shields.io/github/forks/tomav/docker-mailserver.svg?label=github%20forks&style=for-the-badge
-[repo]: https://github.com/tomav/docker-mailserver/
+[gh_stars]: https://img.shields.io/github/stars/docker-mailserver/docker-mailserver.svg?label=github%20%E2%98%85&style=for-the-badge
+[contributors]: https://img.shields.io/github/contributors/docker-mailserver/docker-mailserver.svg?style=for-the-badge
+[forks]: https://img.shields.io/github/forks/docker-mailserver/docker-mailserver.svg?label=github%20forks&style=for-the-badge
+[repo]: https://github.com/docker-mailserver/docker-mailserver/
 
 A fullstack but simple mail server (SMTP, IMAP, Antispam, Antivirus...). Only configuration files, no SQL database. Keep it simple and versioned. Easy to deploy and upgrade.
 
@@ -62,8 +62,8 @@ A fullstack but simple mail server (SMTP, IMAP, Antispam, Antivirus...). Only co
 - basic [Sieve support](https://github.com/tomav/docker-mailserver/wiki/Configure-Sieve-filters) using dovecot
 - SASLauthd with LDAP auth
 - persistent data and state (but think about backups!)
-- [Integration tests](https://travis-ci.org/tomav/docker-mailserver)
-- [Automated builds on docker hub](https://hub.docker.com/r/tvial/docker-mailserver/)
+- [CI/CD](https://github.com/docker-mailserver/docker-mailserver/actions/new)
+- [Automated builds on docker hub](https://hub.docker.com/r/SOME-REPO/docker-mailserver/)
 - Plus addressing (a.k.a. [extension delimiters](http://www.postfix.org/postconf.5.html#recipient_delimiter))
   works out of the box: email for `you+extension@example.com` go to `you@example.com`
 
@@ -95,10 +95,10 @@ Minimum:
 Download the `docker-compose.yml`, `compose.env`, `mailserver.env` and the `setup.sh` files:
 
 ``` BASH
-wget https://raw.githubusercontent.com/tomav/docker-mailserver/master/setup.sh
-wget https://raw.githubusercontent.com/tomav/docker-mailserver/master/docker-compose.yml
-wget https://raw.githubusercontent.com/tomav/docker-mailserver/master/mailserver.env
-wget -O .env https://raw.githubusercontent.com/tomav/docker-mailserver/master/compose.env
+wget https://raw.githubusercontent.com/docker-mailserver/docker-mailserver/stable/setup.sh
+wget https://raw.githubusercontent.com/docker-mailserver/docker-mailserver/stable/docker-compose.yml
+wget https://raw.githubusercontent.com/docker-mailserver/docker-mailserver/stable/mailserver.env
+wget -O .env https://raw.githubusercontent.com/docker-mailserver/docker-mailserver/stable/compose.env
 
 chmod a+x ./setup.sh
 ```
@@ -122,16 +122,14 @@ chmod a+x ./setup.sh
 If you'd like to use SELinux, add `-Z` to the variable `SELINUX_LABEL` in `.env`. If you want the volume bind mount to be shared among other containers switch `-Z` to `-z`
 
 ``` BASH
-# without SELinux
 docker-compose up -d mail
 
+# without SELinux
 ./setup.sh email add <user@domain> [<password>]
 ./setup.sh alias add postmaster@<domain> <user@domain>
 ./setup.sh config dkim
 
 # with SELinux
-docker-compose up -d mail
-
 ./setup.sh -Z email add <user@domain> [<password>]
 ./setup.sh -Z alias add postmaster@<domain> <user@domain>
 ./setup.sh -Z config dkim
@@ -213,7 +211,7 @@ We are currently providing support for Linux. Windows is _not_ supported and is 
 
 ``` BASH
 docker-compose down
-docker pull tvial/docker-mailserver:<VERSION TAG>
+docker pull SOME-REPO/docker-mailserver:<VERSION TAG>
 docker-compose up -d mail
 ```
 
@@ -249,7 +247,7 @@ version: '3.8'
 
 services:
   mail:
-    image: docker.io/tvial/docker-mailserver:latest
+    image: SOME-REGISTRY/SOME-REPO/docker-mailserver:latest
     hostname: mail          # ${HOSTNAME}
     domainname: domain.com  # ${DOMAINNAME}
     container_name: mail    # ${CONTAINER_NAME}
@@ -290,7 +288,7 @@ version: '3.8'
 
 services:
   mail:
-    image: docker.io/tvial/docker-mailserver:latest
+    image: SOME-REGISTRY/SOME-REPO/docker-mailserver:latest
     hostname: mail          # ${HOSTNAME}
     domainname: domain.com  # ${DOMAINNAME}
     container_name: mail    # ${CONTAINER_NAME}
@@ -426,7 +424,7 @@ Enables the Sender Rewriting Scheme. SRS is needed if your mail server acts as f
 
 ##### PERMIT_DOCKER
 
-Set different options for mynetworks option (can be overwrite in postfix-main.cf) **WARNING**: Adding the docker network's gateway to the list of trusted hosts, e.g. using the `network` or `connected-networks` option, can create an [**open relay**](https://en.wikipedia.org/wiki/Open_mail_relay), [for instance](https://github.com/tomav/docker-mailserver/issues/1405#issuecomment-590106498) if IPv6 is enabled on the host machine but not in Docker.
+Set different options for mynetworks option (can be overwrite in postfix-main.cf) **WARNING**: Adding the docker network's gateway to the list of trusted hosts, e.g. using the `network` or `connected-networks` option, can create an [**open relay**](https://en.wikipedia.org/wiki/Open_mail_relay), for instance if IPv6 is enabled on the host machine but not in Docker.
 
 - **empty** => localhost only
 - host => Add docker host (ipv4 only)

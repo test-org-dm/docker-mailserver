@@ -236,16 +236,18 @@ function _main
   then
     if [[ ${CRI} == "docker" ]]
     then
-      IMAGE_NAME=tvial/docker-mailserver:latest
+      IMAGE_NAME=${NAME:-tvial/docker-mailserver:latest}
     elif [[ ${CRI} == "podman" ]]
     then
-      IMAGE_NAME=docker.io/tvial/docker-mailserver:latest
+      IMAGE_NAME=docker.io/${NAME:-tvial/docker-mailserver:latest}
     fi
   fi
 
-  if tty -s
+  if test -t 0
   then
     USE_TTY="-ti"
+  else
+    USE_TTY="-t"
   fi
 
   local OPTIND

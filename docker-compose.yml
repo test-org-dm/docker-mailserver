@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   mail:
-    image: tvial/docker-mailserver:latest
+    image: docker.io/mailserver/docker-mailserver:stable
     hostname: ${HOSTNAME}
     domainname: ${DOMAINNAME}
     container_name: ${CONTAINER_NAME}
@@ -15,9 +15,7 @@ services:
       - maildata:/var/mail
       - mailstate:/var/mail-state
       - maillogs:/var/log/mail
-      - ./config/:/tmp/docker-mailserver/
-      # ? if SELinux is enabled, uncomment the line below and comment the line above
-      # - ./config/:/tmp/docker-mailserver/${SELINUX_LABEL}
+      - ./config/:/tmp/docker-mailserver/${SELINUX_LABEL}
     env_file:
       - mailserver.env
     cap_add:

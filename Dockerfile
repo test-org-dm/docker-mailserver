@@ -3,12 +3,12 @@ FROM debian:buster-slim
 ARG VCS_REF
 ARG VCS_VERSION
 
-LABEL maintainer="Thomas VIAL" \
+LABEL maintainer="The Docker Mailserver Organisation"  \
   org.label-schema.name="docker-mailserver" \
-  org.label-schema.description="A fullstack but simple mailserver (smtp, imap, antispam, antivirus, ssl...)" \
-  org.label-schema.url="https://github.com/tomav/docker-mailserver" \
+  org.label-schema.description="A fullstack but simple mailserver (SMTP, IMAP, LDAP, Antispam, Antivirus, etc.)" \
+  org.label-schema.url="https://github.com/docker-mailserver/docker-mailserver" \
   org.label-schema.vcs-ref=$VCS_REF \
-  org.label-schema.vcs-url="https://github.com/tomav/docker-mailserver" \
+  org.label-schema.vcs-url="https://github.com/docker-mailserver/docker-mailserver" \
   org.label-schema.version=$VCS_VERSION \
   org.label-schema.schema-version="1.0"
 
@@ -119,6 +119,8 @@ RUN c_rehash && echo "0 */6 * * * clamav /usr/bin/freshclam --quiet" > /etc/cron
 COPY target/dovecot/auth-passwdfile.inc target/dovecot/??-*.conf /etc/dovecot/conf.d/
 COPY target/dovecot/scripts/quota-warning.sh /usr/local/bin/quota-warning.sh
 COPY target/dovecot/sieve/ /etc/dovecot/sieve/
+COPY target/dovecot/dovecot-purge.cron /etc/cron.d/dovecot-purge.disabled
+RUN chmod 0 /etc/cron.d/dovecot-purge.disabled
 WORKDIR /usr/share/dovecot
 # hadolint ignore=SC2016,SC2086
 RUN sed -i -e 's/include_try \/usr\/share\/dovecot\/protocols\.d/include_try \/etc\/dovecot\/protocols\.d/g' /etc/dovecot/dovecot.conf && \
@@ -220,6 +222,9 @@ RUN sed -i -r "/^#?compress/c\compress\ncopytruncate" /etc/logrotate.conf && \
   # prevent syslog logrotate warnings \
   sed -i -e 's/\(printerror "could not determine current runlevel"\)/#\1/' /usr/sbin/invoke-rc.d && \
   sed -i -e 's/^\(POLICYHELPER=\).*/\1/' /usr/sbin/invoke-rc.d && \
+  # Prevent syslog warning about imklog permissions.
+  # We won't want to look at that inside a container anyway.
+  sed -i -e 's/^module(load=\"imklog\")/#module(load=\"imklog\")/' /etc/rsyslog.conf && \
   # prevent email when /sbin/init or init system is not existing \
   sed -i -e 's|invoke-rc.d rsyslog rotate > /dev/null|/usr/bin/supervisorctl signal hup rsyslog >/dev/null|g' /usr/lib/rsyslog/rsyslog-rotate
 

@@ -543,9 +543,13 @@ function _setup_dovecot
 
   # set mail_location according to mailbox format
   case "${DOVECOT_MAILBOX_FORMAT}" in
-    sdbox|mdbox|maildir )
+    sdbox|mdbox )
       _notify 'inf' "Dovecot ${DOVECOT_MAILBOX_FORMAT} format configured"
       sed -i -e 's/^mail_location = .*$/mail_location = '"${DOVECOT_MAILBOX_FORMAT}"':\/var\/mail\/%d\/%n/g' /etc/dovecot/conf.d/10-mail.conf
+
+      _notify 'inf' "Enabling cron job for dbox purge"
+      mv /etc/cron.d/dovecot-purge.disabled /etc/cron.d/dovecot-purge
+      chmod 644 /etc/cron.d/dovecot-purge
       ;;
     * )
       _notify 'inf' "Dovecot maildir format configured (default)"
@@ -917,6 +921,35 @@ function _setup_saslauthd
 
   [[ -z ${SASLAUTHD_LDAP_START_TLS} ]] && SASLAUTHD_LDAP_START_TLS=no
   [[ -z ${SASLAUTHD_LDAP_TLS_CHECK_PEER} ]] && SASLAUTHD_LDAP_TLS_CHECK_PEER=no
+  [[ -z ${SASLAUTHD_LDAP_AUTH_METHOD} ]] && SASLAUTHD_LDAP_AUTH_METHOD=bind
+
+  if [[ -z ${SASLAUTHD_LDAP_TLS_CACERT_FILE} ]]
+  then
+    SASLAUTHD_LDAP_TLS_CACERT_FILE=""
+  else
+    SASLAUTHD_LDAP_TLS_CACERT_FILE="ldap_tls_cacert_file: ${SASLAUTHD_LDAP_TLS_CACERT_FILE}"
+  fi
+
+  if [[ -z ${SASLAUTHD_LDAP_TLS_CACERT_DIR} ]]
+  then
+    SASLAUTHD_LDAP_TLS_CACERT_DIR=""
+  else
+    SASLAUTHD_LDAP_TLS_CACERT_DIR="ldap_tls_cacert_dir: ${SASLAUTHD_LDAP_TLS_CACERT_DIR}"
+  fi
+
+  if [[ -z ${SASLAUTHD_LDAP_PASSWORD_ATTR} ]]
+  then
+    SASLAUTHD_LDAP_PASSWORD_ATTR=""
+  else
+    SASLAUTHD_LDAP_PASSWORD_ATTR="ldap_password_attr: ${SASLAUTHD_LDAP_PASSWORD_ATTR}"
+  fi
+
+  if [[ -z ${SASLAUTHD_LDAP_MECH} ]]
+  then
+    SASLAUTHD_LDAP_MECH=""
+  else
+    SASLAUTHD_LDAP_MECH="ldap_mech: ${SASLAUTHD_LDAP_MECH}"
+  fi
 
   if [[ ! -f /etc/saslauthd.conf ]]
   then
@@ -924,7 +957,7 @@ function _setup_saslauthd
     cat > /etc/saslauthd.conf << EOF
 ldap_servers: ${SASLAUTHD_LDAP_PROTO}${SASLAUTHD_LDAP_SERVER}
 
-ldap_auth_method: bind
+ldap_auth_method: ${SASLAUTHD_LDAP_AUTH_METHOD}
 ldap_bind_dn: ${SASLAUTHD_LDAP_BIND_DN}
 ldap_bind_pw: ${SASLAUTHD_LDAP_PASSWORD}
 
@@ -933,6 +966,11 @@ ldap_filter: ${SASLAUTHD_LDAP_FILTER}
 
 ldap_start_tls: ${SASLAUTHD_LDAP_START_TLS}
 ldap_tls_check_peer: ${SASLAUTHD_LDAP_TLS_CHECK_PEER}
+
+${SASLAUTHD_LDAP_TLS_CACERT_FILE}
+${SASLAUTHD_LDAP_TLS_CACERT_DIR}
+${SASLAUTHD_LDAP_PASSWORD_ATTR}
+${SASLAUTHD_LDAP_MECH}
 
 ldap_referrals: yes
 log_level: 10
@@ -1095,7 +1133,16 @@ function _setup_ssl
       local LETSENCRYPT_DOMAIN=""
       local LETSENCRYPT_KEY=""
 
-      [[ -f /etc/letsencrypt/acme.json ]] && (_extract_certs_from_acme "${HOSTNAME}" || _extract_certs_from_acme "${DOMAINNAME}")
+      if [[ -f /etc/letsencrypt/acme.json ]]
+      then
+        if ! _extract_certs_from_acme "${SSL_DOMAIN}"
+        then
+          if ! _extract_certs_from_acme "${HOSTNAME}"
+          then
+            _extract_certs_from_acme "${DOMAINNAME}"
+          fi
+        fi
+      fi
 
       # first determine the letsencrypt domain by checking both the full hostname or just the domainname if a SAN is used in the cert
       if [[ -e /etc/letsencrypt/live/${HOSTNAME}/fullchain.pem ]]

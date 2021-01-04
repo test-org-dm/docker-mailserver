@@ -1,7 +1,7 @@
 ---
 name: "\U0001F389 Feature request"
 about: Suggest an Idea for This Project
-title: ''
+title: '[FR]'
 labels: area/enhancement, kind/feature request, meta/needs triage, priority/low
 assignees: ''
 

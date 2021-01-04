@@ -1,7 +1,7 @@
 ---
 name: "\U0001F41E Bug Report"
 about: Create a report about a reproducible bug
-title: ''
+title: '[BUG]'
 labels: area/bug, meta/needs triage, priority/medium
 assignees: ''
 

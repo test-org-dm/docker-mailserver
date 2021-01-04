@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   mail:
-    image: tvial/docker-mailserver:latest
+    image: docker.io/mailserver/docker-mailserver:stable
     hostname: ${HOSTNAME}
     domainname: ${DOMAINNAME}
     container_name: ${CONTAINER_NAME}

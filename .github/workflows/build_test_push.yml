@@ -25,14 +25,14 @@ jobs:
           HADOLINT_VERSION: 1.18.0
       - name: SHELLCHECK
         run: |
-          sudo wget -qO- "https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/shellcheck-v${SHELLCHECK_VERSION}.linux.x86_64.tar.xz" | tar -xJ
+          sudo curl -L "https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/shellcheck-v${SHELLCHECK_VERSION}.linux.x86_64.tar.xz" | tar -xJ
           sudo mv "shellcheck-v${SHELLCHECK_VERSION}/shellcheck" /usr/bin/
           make shellcheck
         env:
           SHELLCHECK_VERSION: 0.7.1
       - name: ECLINT
         run: |
-          sudo wget -qO- "https://github.com/editorconfig-checker/editorconfig-checker/releases/download/${ECLINT_VERSION}/ec-linux-amd64.tar.gz" | tar -xaz
+          sudo curl -L "https://github.com/editorconfig-checker/editorconfig-checker/releases/download/${ECLINT_VERSION}/ec-linux-amd64.tar.gz" | tar -xaz
           sudo mv bin/ec-linux-amd64 /usr/bin/eclint
           sudo chmod +x /usr/bin/eclint
           make eclint

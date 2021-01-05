@@ -247,6 +247,8 @@ function _main
   then
     USE_TTY="-ti"
   else
+  # Github Actions will fail (or really anything else lacking an interactive tty) if we don't set a value here.
+  #   -t alone works for these cases.
     USE_TTY="-t"
   fi
 

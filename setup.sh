@@ -108,8 +108,8 @@ Usage: ${0} [-i IMAGE_NAME] [-c CONTAINER_NAME] <subcommand> <subcommand> [args]
 OPTIONS:
 
   -i IMAGE_NAME     The name of the docker-mailserver image, by default
-                    'tvial/docker-mailserver:latest' for docker, and
-                    'docker.io/tvial/docker-mailserver:latest' for podman.
+                    'mailserver/docker-mailserver:latest' for docker, and
+                    'docker.io/mailserver/docker-mailserver:latest' for podman.
 
   -c CONTAINER_NAME The name of the running container.
 
@@ -236,10 +236,10 @@ function _main
   then
     if [[ ${CRI} == "docker" ]]
     then
-      IMAGE_NAME=${NAME:-tvial/docker-mailserver:latest}
+      IMAGE_NAME=${NAME:-mailserver/docker-mailserver:latest}
     elif [[ ${CRI} == "podman" ]]
     then
-      IMAGE_NAME=docker.io/${NAME:-tvial/docker-mailserver:latest}
+      IMAGE_NAME=docker.io/${NAME:-mailserver/docker-mailserver:latest}
     fi
   fi
 

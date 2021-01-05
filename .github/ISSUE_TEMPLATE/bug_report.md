@@ -1,17 +1,16 @@
 ---
 name: "\U0001F41E Bug Report"
 about: Create a report about a reproducible bug
-title: ''
+title: "[BUG]"
 labels: area/bug, meta/needs triage, priority/medium
-assignees: ''
-
+assignees: ""
 ---
 
 <!---
 Possible answers to your issue
 
 * ClamAV keeps restarting:
-  https://github.com/tomav/docker-mailserver#requirements
+  https://github.com/docker-mailserver/docker-mailserver#requirements
 
 * Email seen as spam:
   https://github.com/tomav/docker-mailserver/wiki/Configure-SPF
@@ -31,7 +30,7 @@ Possible answers to your issue
   https://github.com/tomav/docker-mailserver/wiki
 
 * Open issues
-  https://github.com/tomav/docker-mailserver/issues
+  https://github.com/docker-mailserver/docker-mailserver/issues
 -->
 
 # Bug Report
@@ -42,11 +41,7 @@ Possible answers to your issue
 
 ### What is affected by this bug?
 
-
-
 ### When does this occur?
-
-
 
 ### How do we replicate the issue?
 
@@ -59,11 +54,7 @@ Possible answers to your issue
 
 ### Actual Behavior
 
-
-
 ### Expected Behavior
-
-
 
 ## Your Environment
 
@@ -75,7 +66,7 @@ Possible answers to your issue
 
 ### Environment Variables
 
-``` CFG
+```CFG
 
 ```
 
@@ -83,7 +74,7 @@ Possible answers to your issue
 
 <!-- Remember to format code using triple backticks (`) so that it is neatly formatted when the issue is posted. -->
 
-``` BASH
+```BASH
 # BEGIN
 
 # END

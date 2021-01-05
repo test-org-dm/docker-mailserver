@@ -3,12 +3,12 @@ FROM debian:buster-slim
 ARG VCS_REF
 ARG VCS_VERSION
 
-LABEL maintainer="Thomas VIAL"  \
+LABEL maintainer="The Docker Mailserver Organisation"  \
   org.label-schema.name="docker-mailserver" \
-  org.label-schema.description="A fullstack but simple mailserver (smtp, imap, antispam, antivirus, ssl...)" \
-  org.label-schema.url="https://github.com/tomav/docker-mailserver" \
+  org.label-schema.description="A fullstack but simple mailserver (SMTP, IMAP, LDAP, Antispam, Antivirus, etc.)" \
+  org.label-schema.url="https://github.com/docker-mailserver/docker-mailserver" \
   org.label-schema.vcs-ref=$VCS_REF \
-  org.label-schema.vcs-url="https://github.com/tomav/docker-mailserver" \
+  org.label-schema.vcs-url="https://github.com/docker-mailserver/docker-mailserver" \
   org.label-schema.version=$VCS_VERSION \
   org.label-schema.schema-version="1.0"
 
@@ -107,7 +107,7 @@ RUN \
   rm /etc/postsrsd.secret && \
   rm /etc/cron.daily/00logwatch
 
-RUN echo "0 */6 * * * clamav /usr/bin/freshclam --quiet" > /etc/cron.d/clamav-freshclam && \
+RUN c_rehash && echo "0 */6 * * * clamav /usr/bin/freshclam --quiet" > /etc/cron.d/clamav-freshclam && \
   chmod 644 /etc/clamav/freshclam.conf && \
   freshclam && \
   sed -i 's/Foreground false/Foreground true/g' /etc/clamav/clamd.conf && \

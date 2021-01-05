@@ -1,6 +1,7 @@
 SHELL = /bin/bash
 
-NAME = tvial/docker-mailserver:testing
+NAME ?= mailserver/docker-mailserver-testing:latest
+
 VCS_REF := $(shell git rev-parse --short HEAD)
 VCS_VERSION := $(shell git describe --tags --contains --always)
 

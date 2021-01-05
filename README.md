@@ -7,7 +7,7 @@
 [build_status]: https://github.com/docker-mailserver/docker-mailserver/workflows/CI/badge.svg
 
 [docker_pulls]: https://img.shields.io/docker/pulls/docker-mailserver/docker-mailserver.svg?style=for-the-badge
-[docker::hub]: https://hub.docker.com/r/docker-mailserver/docker-mailserver/
+[docker::hub]: https://hub.docker.com/r/mailserver/docker-mailserver/
 
 [gh_stars]: https://img.shields.io/github/stars/docker-mailserver/docker-mailserver.svg?label=github%20%E2%98%85&style=for-the-badge
 [contributors]: https://img.shields.io/github/contributors/docker-mailserver/docker-mailserver.svg?style=for-the-badge
@@ -240,14 +240,14 @@ See the [wiki](https://github.com/tomav/docker-mailserver/wiki) for further deta
 
 ### With Relevant Environmental Variables
 
-This example provides you only with a basic example of what a minimal setup could look like. We **strongly recommend** that you go through the configuration file yourself and adjust everything to your needs.
+This example provides you only with a basic example of what a minimal setup could look like. We **strongly recommend** that you go through the configuration file yourself and adjust everything to your needs. The default [docker-compose.yml](./docker-compose.yml) can be used for the purpose out-of-the-box.
 
 ``` YAML
 version: '3.8'
 
 services:
   mail:
-    image: SOME-REGISTRY/SOME-REPO/docker-mailserver:latest
+    image: docker.io/mailserver/docker-mailserver:latest
     hostname: mail          # ${HOSTNAME}
     domainname: domain.com  # ${DOMAINNAME}
     container_name: mail    # ${CONTAINER_NAME}
@@ -288,7 +288,7 @@ version: '3.8'
 
 services:
   mail:
-    image: SOME-REGISTRY/SOME-REPO/docker-mailserver:latest
+    image: docker.io/mailserver/docker-mailserver:latest
     hostname: mail          # ${HOSTNAME}
     domainname: domain.com  # ${DOMAINNAME}
     container_name: mail    # ${CONTAINER_NAME}

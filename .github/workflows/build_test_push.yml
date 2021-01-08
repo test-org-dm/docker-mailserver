@@ -52,7 +52,7 @@ jobs:
       - name: Prepare
         id: prep
         run: |
-          DOCKER_IMAGE=${{ secrets.DOCKER_USERNAME }}/docker-mailserver-testing
+          DOCKER_IMAGE=mailserver/testing
           TAGS="${DOCKER_IMAGE}:${GITHUB_SHA::8},${DOCKER_IMAGE}:latest"
           echo ::set-output name=tags::${TAGS}
       - name: Set up QEMU
@@ -81,8 +81,7 @@ jobs:
           build-args: |
             VCS_REF=${{ github.sha }}
             VCS_VERSION=${{ github.ref }}
-          # platforms: linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64,linux/ppc64le,linux/s390x
-          platforms: linux/amd64,linux/arm64 # while developing to save time
+          platforms: linux/amd64,linux/arm/v7,linux/arm64 # currently supported platforms
           pull: true
           push: true
           tags: ${{ steps.prep.outputs.tags }}
@@ -98,7 +97,7 @@ jobs:
           submodules: recursive
       - name: run test suite
         run: |
-          NAME=${{ secrets.DOCKER_USERNAME }}/docker-mailserver-testing:${GITHUB_SHA::8} bash -c 'make generate-accounts tests'
+          NAME=mailserver/testing:${GITHUB_SHA::8} bash -c 'make generate-accounts tests'
         env:
           CI: true
   publish:
@@ -113,7 +112,7 @@ jobs:
       - name: Prepare
         id: prep
         run: |
-          DOCKER_IMAGE=${{ secrets.DOCKER_USERNAME }}/docker-mailserver
+          DOCKER_IMAGE=mailserver/docker-mailserver
           VERSION=edge
           if [[ $GITHUB_REF == refs/tags/* ]]; then
             VERSION=${GITHUB_REF#refs/tags/v}
@@ -152,8 +151,7 @@ jobs:
           build-args: |
             VCS_REF=${{ github.sha }}
             VCS_VERSION=${{ github.ref }}
-          # platforms: linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64,linux/ppc64le,linux/s390x
-          platforms: linux/amd64,linux/arm64 # while developing to save time
+          platforms: linux/amd64,linux/arm/v7,linux/arm64 # currently supported platforms
           pull: true
           push: true
           tags: ${{ steps.prep.outputs.tags }}

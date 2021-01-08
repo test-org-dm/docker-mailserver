@@ -81,8 +81,7 @@ jobs:
           build-args: |
             VCS_REF=${{ github.sha }}
             VCS_VERSION=${{ github.ref }}
-          # platforms: linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64,linux/ppc64le,linux/s390x
-          platforms: linux/amd64,linux/arm64 # while developing to save time
+          platforms: linux/amd64,linux/arm/v7,linux/arm64 # currently supported platforms
           pull: true
           push: true
           tags: ${{ steps.prep.outputs.tags }}
@@ -152,8 +151,7 @@ jobs:
           build-args: |
             VCS_REF=${{ github.sha }}
             VCS_VERSION=${{ github.ref }}
-          # platforms: linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64,linux/ppc64le,linux/s390x
-          platforms: linux/amd64,linux/arm64 # while developing to save time
+          platforms: linux/amd64,linux/arm/v7,linux/arm64 # currently supported platforms
           pull: true
           push: true
           tags: ${{ steps.prep.outputs.tags }}
